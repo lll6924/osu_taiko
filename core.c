@@ -15,11 +15,11 @@ struct pin* pins;
 
 
 void loadpins(){
-  pins=getMap();
+  pins=(struct pin*)getMap();
   hitcnt=getHitCnt();
   int i;
   for(i=0;i<hitcnt;i++){
-    pins[i].locationx*=2;
+    pins[i].locationx*=3;
     pins[i].type=note;
     pins[i].locationy=targety;
     if(pins[i].size==1)pins[i].r2=45*45;
@@ -94,10 +94,14 @@ void* taiko(void *arg){
     if(state==0){
       if(Zdown==1)state++;
     }if(state==1){
-      gametime+=2;
+      gametime+=4;
       for(i=0;i<width;i++)
-        for(j=200;j<400;j++)
-          buffer[j*width+i]=(unsigned char)(146);
+        for(j=0;j<height;j++)
+          buffer[j*width+i]=bkg[j*width+i];
+      for(i=0;i<width;i++)
+        for(j=220;j<380;j++)
+          if(i<140)buffer[j*width+i]=(unsigned char)(219);
+          else buffer[j*width+i]=(unsigned char)(146);
       for(int i=-100;i<100;i++)
         for(int j=-100;j<100;j++){
           int x,y,d;
@@ -113,7 +117,7 @@ void* taiko(void *arg){
           y=drumy+j;
           d=dist(x,y,drumx,drumy);
           if(d<50*50){
-            if(x==drumx)buffer[y*width+x]=(unsigned char)(X);
+            if(x==drumx)buffer[y*width+x]=(unsigned char)(219);
             else if(x<drumx){
               if(Xdown)buffer[y*width+x]=(unsigned char)(229);
               else buffer[y*width+x]=(unsigned char)(140);
@@ -122,9 +126,9 @@ void* taiko(void *arg){
               else buffer[y*width+x]=(unsigned char)(140);
             }
           }else if(d<52*52){
-            buffer[y*width+x]=(unsigned char)(X);
+            buffer[y*width+x]=(unsigned char)(219);
           }else if(d<60*60){
-            if(x==drumx)buffer[y*width+x]=(unsigned char)(X);
+            if(x==drumx)buffer[y*width+x]=(unsigned char)(219);
             else if(x<drumx){
               if(Zdown)buffer[y*width+x]=(unsigned char)(39);
               else buffer[y*width+x]=(unsigned char)(140);
@@ -219,20 +223,6 @@ void* taiko(void *arg){
       }
       //printf("%d\n",score);
       copyToGraph(buffer);
-      for(i=begin;i<=pins[0].locationx;i++){
-        if(pins[i].locationx-gametime>width+100)break;
-        if(pins[i].locationy>-100&&pins[i].locationy<height+100){
-          for(j=-100;j<100;j++)
-            for(k=-100;k<100;k++){
-              int x,y;
-              x=pins[i].locationx-gametime+j;
-              y=pins[i].locationy+k;
-              if(x>=0&&y>=0&&x<width&&y<height&&dist(x,y,pins[i].locationx-gametime,pins[i].locationy)<pins[i].r2){
-                buffer[y*width+x]=bkg[y*width+x];
-              }
-            }
-        }
-      }
     }
   }
 }
