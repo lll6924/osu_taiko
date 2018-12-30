@@ -49,7 +49,7 @@ GdkPixbuf* getDrawer(){
 }
 
 GtkWidget *window;
-  GtkWidget *drawing_area;
+GtkWidget *drawing_area;
 
 /* Surface to store current scribbles */
 static cairo_surface_t *surface = NULL;
@@ -116,8 +116,23 @@ gboolean deal_key_press(GtkWidget *widget, GdkEventKey  *event, gpointer data)
   if (surface == NULL)
     return FALSE;
   int key = event->keyval; // 获取键盘键值类型
-  printf("keyval = %d\n", key);
-  keys[key/8]|=MASKS[key%8];
+  switch(key){
+    case Z:
+      *keys|=MASKS[0];
+      break;
+    case X:
+      *keys|=MASKS[1];
+      break;
+    case C:
+      *keys|=MASKS[2];
+      break;
+    case V:
+      *keys|=MASKS[3];
+      break;
+    default:
+      break;
+  }
+  //keys[key/8]|=MASKS[key%8];
   return TRUE;
 }
 
@@ -126,8 +141,23 @@ gboolean deal_key_release(GtkWidget *widget, GdkEventKey  *event, gpointer data)
   if (surface == NULL)
     return FALSE;
   int key = event->keyval; // 获取键盘键值类型
-  printf("keyval = %d\n", key);
-  keys[key/8]&=~MASKS[key%8];
+  switch(key){
+    case Z:
+      *keys&=~MASKS[0];
+      break;
+    case X:
+      *keys&=~MASKS[1];
+      break;
+    case C:
+      *keys&=~MASKS[2];
+      break;
+    case V:
+      *keys&=~MASKS[3];
+      break;
+    default:
+      break;
+  }
+  //  keys[key/8]&=~MASKS[key%8];
   return TRUE;
 }
 
@@ -204,13 +234,12 @@ int main (int argc,char **argv){
     fread(numbers[i],1,numberwidth*numberheight*sizeof(char),fp);
     fclose(fp);
   }
-  keys=(unsigned char *)malloc(8192 * sizeof(char));
+  keys=(unsigned char *)malloc(sizeof(char));
   todraw=gdk_pixbuf_new (GDK_COLORSPACE_RGB,FALSE,8,width,height);
   int pd;
   pthread_t tid;
   pd = pthread_create(&tid,NULL,taiko,NULL);
-  for(i=0;i<8192;i++)
-    keys[i]=0;
+  *keys=0;
 
   GtkApplication *app;
   int status;

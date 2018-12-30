@@ -23,4 +23,6 @@ unsigned char** getNumbers();
 
 unsigned char* getMapMem();
 
+void sound(int,int);
+
 #endif

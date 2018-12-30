@@ -17,6 +17,8 @@ unsigned char* mapmem;
 
 struct pin* pins;
 
+int Zdown,Xdown,Cdown,Vdown;
+
 int getHitCount(int id, unsigned char* mem) {
     if (id < 0 || id >= MAX_MAPS) return -1;
     struct beatMap* maps = (struct beatMap*) mem;
@@ -32,8 +34,8 @@ unsigned char* getMap(int id, unsigned char* mem) {
 
 
 void loadpins(){
-  pins=(struct pin*)getMap(0,mapmem);
-  hitcnt=getHitCount(0,mapmem);
+  pins=(struct pin*)getMap(1,mapmem);
+  hitcnt=getHitCount(1,mapmem);
   int i;
   for(i=0;i<hitcnt;i++){
     pins[i].locationx*=3;
@@ -73,8 +75,14 @@ void copyToGraph(unsigned char* source){
 }
 
 int keydown(int val){
-  if((keymem[val/8]&MASKS[val%8])>0)return 1;
-  return 0;
+  return ((*keymem&MASKS[val])!=0);
+}
+
+void InputUpdate(){
+  Zdown=keydown(0);
+  Xdown=keydown(1);
+  Cdown=keydown(2);
+  Vdown=keydown(3);
 }
 
 void* taiko(void *arg){
@@ -104,15 +112,12 @@ void* taiko(void *arg){
       nowtime=getTime();
     }
     lasttime=nowtime;
+    InputUpdate();
     //printf("%u\n",nowtime);
-    int Zdown,Xdown,Cdown,Vdown;
-    Zdown=keydown(Z);
-    Xdown=keydown(X);
-    Cdown=keydown(C);
-    Vdown=keydown(V);
     if(state==0){
       if(Zdown==1)state++;
     }if(state==1){
+      
       gametime+=4;
       for(i=0;i<width;i++)
         for(j=0;j<height;j++)
@@ -160,13 +165,20 @@ void* taiko(void *arg){
       for(i=begin;i<hitcnt;i++){
         if(pins[i].state==accept){
           pins[i].locationy-=2;
+          pins[i].locationx+=5;
+          pins[i].r2-=20;
+          if(pins[i].r2<0)pins[i].state=trulydead;
+        }else if(pins[i].state==dead){
+          pins[i].locationy+=2;
           pins[i].locationx+=4;
           pins[i].r2-=20;
-          if(pins[i].r2<0)pins[i].state=dead;
+          if(pins[i].r2<0)pins[i].state=trulydead;
+        }else if(pins[i].locationx<gametime-100||pins[i].locationy<-100||pins[i].locationy>=height+100){
+          pins[i].state=trulydead;
         }else if(pins[i].locationx<gametime+150){
           pins[i].state=dead;
         }
-        if(pins[i].state==dead){
+        if(pins[i].state==trulydead){
           begin=i+1;
           continue;
         }
@@ -185,7 +197,7 @@ void* taiko(void *arg){
                     if(pins[i].size==1&&pins[i].state==accept)score+=100;
                     if(pins[i].state!=accept)score+=100;
                     pins[i].state=accept;
-                  }
+                  }else pins[i].state=dead;
                 }
                 if(pins[i].xpoint==0){
                   if(Xdown==0){
@@ -197,7 +209,7 @@ void* taiko(void *arg){
                     if(pins[i].size==1&&pins[i].state==accept)score+=100;
                     if(pins[i].state!=accept)score+=100;
                     pins[i].state=accept;
-                  }
+                  }else pins[i].state=dead;
                 }
                 if(pins[i].cpoint==0){
                   if(Cdown==0){
@@ -209,7 +221,7 @@ void* taiko(void *arg){
                     if(pins[i].size==1&&pins[i].state==accept)score+=100;
                     if(pins[i].state!=accept)score+=100;
                     pins[i].state=accept;
-                  }
+                  }else pins[i].state=dead;
                 }
                 if(pins[i].vpoint==0){
                   if(Vdown==0){
@@ -221,7 +233,7 @@ void* taiko(void *arg){
                     if(pins[i].size==1&&pins[i].state==accept)score+=100;
                     if(pins[i].state!=accept)score+=100;
                     pins[i].state=accept;
-                  }
+                  }else pins[i].state=dead;
                 }
               }
             }
@@ -233,6 +245,8 @@ void* taiko(void *arg){
               y=pins[i].locationy+k;
               if(x>=0&&y>=0&&x<width&&y<height&&dist(x,y,pins[i].locationx-gametime,pins[i].locationy)<pins[i].r2){
                 if(pins[i].state==accept){
+                  buffer[y*width+x]=(unsigned char)(216);
+                }else if(pins[i].state==dead){
                   buffer[y*width+x]=(unsigned char)(37);
                 }else if(pins[i].color==1)buffer[y*width+x]=(unsigned char)(233);
                 else buffer[y*width+x]=(unsigned char)(71);

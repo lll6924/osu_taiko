@@ -19,7 +19,7 @@ static const int V=118;
 
 struct pin{
   enum STATE{
-    pending,dead,accept
+    pending,dead,accept,trulydead
   };
   enum TYPE{
     note,drumroll,denden
