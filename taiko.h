@@ -3,6 +3,7 @@
 
 #define MAX_LEN 100
 #define MAX_HITS 2000
+#define MAX_MAPS 10
 
 static const int targety=300;
 static const int targetx=200;
@@ -26,11 +27,22 @@ struct pin{
   int locationx,range;
   enum TYPE type;
   char color,size;//color:0蓝1红
-  
-  
+
+
   int locationy,r2;
   char zpoint,xpoint,cpoint,vpoint;
   enum STATE state;
 };
 
+
+struct beatMap{
+    int offset;
+    int len;
+};
+
+struct pin* getMaps(int id, char* mem);
+
+int getHitCnt(int id, char* mem);
+
+char* generate_bin(char **names, int filenum);
 #endif
