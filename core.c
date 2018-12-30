@@ -28,6 +28,7 @@ void loadpins(struct pin* pins){
     pins[i].range=20;
     pins[i].r2=6400;
     pins[i].state=pending;
+    pins[i].zeropoing=0;
   }
 }
 
@@ -109,6 +110,9 @@ void* taiko(void *arg){
       if(pins[i].locationx-gametime>width+100)break;
       if(pins[i].locationy>-100&&pins[i].locationy<height+100){
         if(pins[i].state==pending&&pins[i].locationx-gametime>targetx-pins[i].range/2&&pins[i].locationx-gametime<targetx+pins[i].range/2){
+          if(pins[i].zeropoint=0){
+            if(keydown(122)==0)pins[i].zeropoint=1;
+          }else if(keydown(122)==1)
           keydown(122)==1
           pins[i].state=accept;
         }
