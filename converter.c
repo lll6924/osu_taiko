@@ -8,9 +8,10 @@ void print(struct pin p) {
     printf("Loc %d range %d type %d size %d color %d\n", p.locationx, p.range, p.type, p.size, p.color);
 }
 
-int printTo(struct pin* data, int len, char* outFilename) {
+int printTo(char* data, int len, char* outFilename) {
+    if (outFilename == NULL) outFilename = "mem.bin";
     FILE * of = fopen(outFilename, "wb");
-    if (fwrite(data, sizeof(struct pin), len, of) < 0) printf("write error!\n");
+    if (fwrite(data, sizeof(char), len, of) < 0) printf("write error!\n");
     else printf("write success!\n");
     fclose(of);
 }
@@ -18,7 +19,7 @@ int printTo(struct pin* data, int len, char* outFilename) {
 ///given input and output file name, generate bin file, store data in array (struct pin*)data
 ///returns number of hitpoints
 int convert(char * filename, char *outFilename, struct pin* data) {
-    printf("size: %d\n", sizeof(struct pin) * MAX_HITS);
+    //printf("size: %d\n", sizeof(struct pin) * MAX_HITS);
     int cnt = 0;
 
     int len = strlen(filename);
@@ -57,15 +58,59 @@ int convert(char * filename, char *outFilename, struct pin* data) {
     }
     fclose(f);
     free(s);
-
-    printTo(data, cnt, outFilename);
+    printf("hitpoints: %d\n", cnt);
     return cnt;
 }
 
-/*int main() {
-    struct pin* data = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
-    int cnt = convert("test.osu", NULL, data);
-    free(data);
-    //printf("cnt: %d\n", cnt);
+char* generate_bin(char **names, int filenum) {
+    int pos = 0, offset = 0;
+    int i, cnt = 0;
+    char* mem, ptr;
+    struct beatMap* maps;
+    struct pin* datas;
+    mem = (char *) malloc(1024 * 1024);
+    ptr = mem;
+    maps = (struct beatMap*) mem;
+    offset = sizeof(struct beatMap) * MAX_MAPS;
+    printf("offset: %d\n", offset);
+
+    datas = (struct pin*) &(maps[MAX_MAPS]);
+
+    for (i = 0; i < filenum; i++) {
+        printf("%s\n", names[i]);
+        maps[i].offset = offset;
+        maps[i].len = convert(names[i], NULL, datas);
+        offset += maps[i].len *sizeof(struct pin);
+        datas = &(datas[maps[i].len]);
+    }
+    printf("Total length: %d\n", offset);
+    printTo(mem, offset, NULL);
+
+    return mem;
+}
+
+int getHitCnt(int id, char* mem) {
+    if (id < 0 || id >= MAX_MAPS) return -1;
+    struct beatMap* maps = (struct beatMap*) mem;
+    return maps[id].len;
+}
+
+struct pin* getMaps(int id, char* mem) {
+    if (id < 0 || id >= MAX_MAPS) return NULL;
+    struct beatMap* maps = (struct beatMap*) mem;
+    struct pin *data = (struct pin*) &(mem[maps[id].offset]);
+    return data;
+};
+
+int main() {
+    char ** filenames = (char **) malloc(sizeof(char *) * MAX_MAPS);
+    filenames[0] = "test.osu";
+    filenames[1] = "test.osu";
+    char *mem;
+    mem = generate_bin(filenames, 2);
+    struct pin* data = getMaps(1, mem);
+    print(data[0]);
+    free(filenames);
+    free(mem);
     return 0;
-}*/
+}
