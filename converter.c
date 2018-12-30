@@ -2,8 +2,7 @@
 #include<string.h>
 #include<stdio.h>
 #include<math.h>
-#define MAX_LEN 100
-#define MAX_HITS 2000
+
 
 void print(struct pin p) {
     printf("Loc %d range %d type %d size %d color %d\n", p.locationx, p.range, p.type, p.size, p.color);

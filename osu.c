@@ -2,9 +2,21 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <pthread.h>
 #include "osu.h"
+#include "taiko.h"
 #include <sys/time.h>
 
 unsigned char* bkg;
+
+struct pin* taikomap;
+int hitcnt;
+
+struct pin* getMap(){
+  return taikomap;
+}
+
+int getHitCnt(){
+  return hitcnt;
+}
 
 unsigned char* getbkg(){
   return bkg;
@@ -169,6 +181,8 @@ activate (GtkApplication *app,
 }
 
 int main (int argc,char **argv){
+  taikomap = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
+  hitcnt = convert("fripSide - snow blind -after- (chaica) [Taiko Oni].osu", NULL, taikomap);
   bkg=(unsigned char*)malloc(width*height*sizeof(char));
   FILE *fp=fopen("bkg.bin","rb");
   fread(bkg,1,width*height*sizeof(char),fp);

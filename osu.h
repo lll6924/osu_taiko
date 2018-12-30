@@ -2,6 +2,7 @@
 #define osu_h
 
 #include <gtk/gtk.h>
+#include "taiko.h"
 
 
 static const int MASKS[8]={1,2,4,8,16,32,64,128};
@@ -15,5 +16,13 @@ unsigned int getTime();
 unsigned char* getbkg();
 
 GdkPixbuf* getDrawer();
+
+
+
+int convert(char * filename, char *outFilename, struct pin* data);
+
+struct pin* getMap();
+
+int getHitCnt();
 
 #endif
