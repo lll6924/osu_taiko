@@ -16,6 +16,8 @@ int printTo(struct pin* data, int len, char* outFilename) {
     fclose(of);
 }
 
+///given input and output file name, generate bin file, store data in array (struct pin*)data
+///returns number of hitpoints
 int convert(char * filename, char *outFilename, struct pin* data) {
     printf("size: %d\n", sizeof(struct pin) * MAX_HITS);
     int cnt = 0;
@@ -26,6 +28,8 @@ int convert(char * filename, char *outFilename, struct pin* data) {
         printf("filename error!\n");
         return 0;
     }
+
+    if (outFilename == NULL) outFilename = "test.bin";
 
     FILE * f = fopen(filename, "r");
     char * s = (char *) malloc(MAX_LEN + 5);
@@ -56,11 +60,13 @@ int convert(char * filename, char *outFilename, struct pin* data) {
     free(s);
 
     printTo(data, cnt, outFilename);
+    return cnt;
 }
 
 /*int main() {
     struct pin* data = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
-    convert("test.osu", "test.bin", data);
+    int cnt = convert("test.osu", NULL, data);
     free(data);
+    //printf("cnt: %d\n", cnt);
     return 0;
 }*/
