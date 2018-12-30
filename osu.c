@@ -7,11 +7,13 @@
 
 unsigned char* bkg;
 
+unsigned char** numbers;
+
 struct pin* taikomap;
 int hitcnt;
 
-struct pin* getMap(){
-  return taikomap;
+unsigned char* getMap(){
+  return (unsigned char*)taikomap;
 }
 
 int getHitCnt(){
@@ -184,9 +186,17 @@ int main (int argc,char **argv){
   taikomap = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
   hitcnt = convert("fripSide - snow blind -after- (chaica) [Taiko Oni].osu", NULL, taikomap);
   bkg=(unsigned char*)malloc(width*height*sizeof(char));
+  numbers=(unsigned char**)malloc(10*sizeof(char*));
   FILE *fp=fopen("bkg.bin","rb");
   fread(bkg,1,width*height*sizeof(char),fp);
   fclose(fp);
+  int i;
+  for(i=0;i<10;i++){
+    numbers[i]=(unsigned char*)malloc(numberwidth*numberheight*sizeof(char));
+    FILE *fp=fopen("bkg.bin","rb");
+    fread(bkg,1,width*height*sizeof(char),fp);
+    fclose(fp);
+  }
   keys=(unsigned char *)malloc(8192 * sizeof(char));
   todraw=gdk_pixbuf_new (GDK_COLORSPACE_RGB,FALSE,8,width,height);
   int pd;

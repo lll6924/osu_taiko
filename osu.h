@@ -21,7 +21,7 @@ GdkPixbuf* getDrawer();
 
 int convert(char * filename, char *outFilename, struct pin* data);
 
-struct pin* getMap();
+unsigned char* getMap();
 
 int getHitCnt();
 
