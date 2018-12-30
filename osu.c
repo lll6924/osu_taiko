@@ -13,15 +13,10 @@ unsigned char** getNumbers(){
   return numbers;
 }
 
-struct pin* taikomap;
-int hitcnt;
+unsigned char *mapmem;
 
-unsigned char* getMap(){
-  return (unsigned char*)taikomap;
-}
-
-int getHitCnt(){
-  return hitcnt;
+unsigned char* getMapMem(){
+  return (unsigned char*)mapmem;
 }
 
 unsigned char* getbkg(){
@@ -187,8 +182,14 @@ activate (GtkApplication *app,
 }
 
 int main (int argc,char **argv){
-  taikomap = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
-  hitcnt = convert("fripSide - snow blind -after- (chaica) [Taiko Oni].osu", NULL, taikomap);
+
+  char ** filenames = (char **) malloc(sizeof(char *) * MAX_MAPS);
+  filenames[0] = "fripSide - snow blind -after- (chaica) [Taiko Oni].osu";
+  filenames[1] = "LiSA - crossing field (gaston_2199) [Kantan].osu";
+  mapmem = generate_bin(filenames, 2);
+  
+  /*taikomap = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
+  hitcnt = convert("fripSide - snow blind -after- (chaica) [Taiko Oni].osu", NULL, taikomap);*/
   bkg=(unsigned char*)malloc(width*height*sizeof(char));
   numbers=(unsigned char**)malloc(10*sizeof(char*));
   FILE *fp=fopen("bkg.bin","rb");

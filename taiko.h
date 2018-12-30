@@ -40,9 +40,7 @@ struct beatMap{
     int len;
 };
 
-struct pin* getMaps(int id, char* mem);
+int convert(char * filename, char *outFilename, struct pin* data);
 
-int getHitCnt(int id, char* mem);
-
-char* generate_bin(char **names, int filenum);
+unsigned char* generate_bin(char **names, int filenum);
 #endif

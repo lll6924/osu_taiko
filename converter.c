@@ -62,13 +62,13 @@ int convert(char * filename, char *outFilename, struct pin* data) {
     return cnt;
 }
 
-char* generate_bin(char **names, int filenum) {
+unsigned char* generate_bin(char **names, int filenum) {
     int pos = 0, offset = 0;
     int i, cnt = 0;
-    char* mem, ptr;
+    unsigned char* mem, ptr;
     struct beatMap* maps;
     struct pin* datas;
-    mem = (char *) malloc(1024 * 1024);
+    mem = (unsigned char *) malloc(1024 * 1024);
     ptr = mem;
     maps = (struct beatMap*) mem;
     offset = sizeof(struct beatMap) * MAX_MAPS;
@@ -89,18 +89,6 @@ char* generate_bin(char **names, int filenum) {
     return mem;
 }
 
-int getHitCnt(int id, char* mem) {
-    if (id < 0 || id >= MAX_MAPS) return -1;
-    struct beatMap* maps = (struct beatMap*) mem;
-    return maps[id].len;
-}
-
-struct pin* getMaps(int id, char* mem) {
-    if (id < 0 || id >= MAX_MAPS) return NULL;
-    struct beatMap* maps = (struct beatMap*) mem;
-    struct pin *data = (struct pin*) &(mem[maps[id].offset]);
-    return data;
-};
 
 /*int main() {
     char ** filenames = (char **) malloc(sizeof(char *) * MAX_MAPS);

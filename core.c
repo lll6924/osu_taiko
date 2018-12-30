@@ -13,12 +13,27 @@ unsigned char* bkg;
 
 unsigned char** numbers;
 
+unsigned char* mapmem;
+
 struct pin* pins;
+
+int getHitCount(int id, unsigned char* mem) {
+    if (id < 0 || id >= MAX_MAPS) return -1;
+    struct beatMap* maps = (struct beatMap*) mem;
+    return maps[id].len;
+}
+
+unsigned char* getMap(int id, unsigned char* mem) {
+    if (id < 0 || id >= MAX_MAPS) return NULL;
+    struct beatMap* maps = (struct beatMap*) mem;
+    struct pin *data = (struct pin*) &(mem[maps[id].offset]);
+    return (unsigned char*)data;
+};
 
 
 void loadpins(){
-  pins=(struct pin*)getMap();
-  hitcnt=getHitCnt();
+  pins=(struct pin*)getMap(0,mapmem);
+  hitcnt=getHitCount(0,mapmem);
   int i;
   for(i=0;i<hitcnt;i++){
     pins[i].locationx*=3;
@@ -67,6 +82,7 @@ void* taiko(void *arg){
   keymem=getKeyMem();
   bkg=getbkg();
   numbers=getNumbers();
+  mapmem=getMapMem();
   int i,j,k;
   unsigned int lasttime,nowtime;
   lasttime=getTime();
