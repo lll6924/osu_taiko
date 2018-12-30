@@ -7,6 +7,12 @@
 
 unsigned char* bkg;
 
+unsigned char* combo;
+
+unsigned char* getCombo(){
+  return combo;
+}
+
 unsigned char** numbers;
 
 unsigned char** getNumbers(){
@@ -221,9 +227,14 @@ int main (int argc,char **argv){
   /*taikomap = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
   hitcnt = convert("fripSide - snow blind -after- (chaica) [Taiko Oni].osu", NULL, taikomap);*/
   bkg=(unsigned char*)malloc(width*height*sizeof(char));
-  numbers=(unsigned char**)malloc(10*sizeof(char*));
+  combo=(unsigned char*)malloc(150*60*sizeof(char));
+  numbers=(unsigned char**)malloc(31*sizeof(char*));
+  numbers[30]=(unsigned char*)malloc(numberwidth*numberheight*sizeof(char));
   FILE *fp=fopen("bkg.bin","rb");
   fread(bkg,1,width*height*sizeof(char),fp);
+  fclose(fp);
+  fp=fopen("bins/combo.bin","rb");
+  fread(combo,1,150*60*sizeof(char),fp);
   fclose(fp);
   int i;
   for(i=0;i<10;i++){
@@ -234,6 +245,25 @@ int main (int argc,char **argv){
     fread(numbers[i],1,numberwidth*numberheight*sizeof(char),fp);
     fclose(fp);
   }
+  for(i=0;i<10;i++){
+    numbers[10+i]=(unsigned char*)malloc(numberwidth*numberheight*sizeof(char));
+    char ss[17]="bins/combo-x.bin\0";
+    ss[11]=i+'0';
+    FILE *fp=fopen(ss,"rb");
+    fread(numbers[i+10],1,numberwidth*numberheight*sizeof(char),fp);
+    fclose(fp);
+  }
+  for(i=0;i<10;i++){
+    numbers[20+i]=(unsigned char*)malloc(20*30*sizeof(char));
+    char ss[17]="bins/count-x.bin\0";
+    ss[11]=i+'0';
+    FILE *fp=fopen(ss,"rb");
+    fread(numbers[i+20],1,20*30*sizeof(char),fp);
+    fclose(fp);
+  }
+  fp=fopen("bins/score-percent.bin","rb");
+  fread(numbers[30],1,numberwidth*numberheight*sizeof(char),fp);
+  fclose(fp);
   keys=(unsigned char *)malloc(sizeof(char));
   todraw=gdk_pixbuf_new (GDK_COLORSPACE_RGB,FALSE,8,width,height);
   int pd;

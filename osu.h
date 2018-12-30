@@ -23,6 +23,8 @@ unsigned char** getNumbers();
 
 unsigned char* getMapMem();
 
+unsigned char* getCombo();
+
 void sound(int,int);
 
 #endif

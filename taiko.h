@@ -26,7 +26,7 @@ struct pin{
   };
   int locationx,range;
   enum TYPE type;
-  char color,size;//color:0蓝1红
+  char color,size,combo;//color:0蓝1红
 
 
   int locationy,r2;

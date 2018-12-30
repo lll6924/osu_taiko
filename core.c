@@ -9,6 +9,8 @@ unsigned char* keymem;
 
 unsigned char* buffer;
 
+unsigned char* comboX;
+
 unsigned char* bkg;
 
 unsigned char** numbers;
@@ -34,10 +36,11 @@ unsigned char* getMap(int id, unsigned char* mem) {
 
 
 void loadpins(){
-  pins=(struct pin*)getMap(1,mapmem);
-  hitcnt=getHitCount(1,mapmem);
+  pins=(struct pin*)getMap(0,mapmem);
+  hitcnt=getHitCount(0,mapmem);
   int i;
   for(i=0;i<hitcnt;i++){
+    pins[i].combo=(i%3==0);
     pins[i].locationx*=3;
     pins[i].type=note;
     pins[i].locationy=targety;
@@ -89,6 +92,7 @@ void* taiko(void *arg){
   buffer=(unsigned char *)malloc(width*height * sizeof(unsigned char));
   keymem=getKeyMem();
   bkg=getbkg();
+  comboX=getCombo();
   numbers=getNumbers();
   mapmem=getMapMem();
   int i,j,k;
@@ -103,8 +107,12 @@ void* taiko(void *arg){
     for(j=0;j<height;j++)
       buffer[j*width+i]=bkg[j*width+i];
   copyToGraph(buffer);
-  int score;
-  score=0;
+  int score=0;
+  int diescore=0;
+  int count=0;
+  int combo=0;
+  unsigned int showcombo=0;
+  int thecombo=0;
   int state=0;
   while(1){
     nowtime=getTime();
@@ -176,7 +184,11 @@ void* taiko(void *arg){
         }else if(pins[i].locationx<gametime-100||pins[i].locationy<-100||pins[i].locationy>=height+100){
           pins[i].state=trulydead;
         }else if(pins[i].locationx<gametime+150){
+          count=0;
+          showcombo=0;
+          combo=0;
           pins[i].state=dead;
+          diescore+=100;
         }
         if(pins[i].state==trulydead){
           begin=i+1;
@@ -187,6 +199,8 @@ void* taiko(void *arg){
           if(pins[i].state==pending&&pins[i].locationx-gametime>targetx-pins[i].range/2&&pins[i].locationx-gametime<targetx+pins[i].range/2){
             if(pins[i].type==note){
               if((Zdown==0&&Vdown==0)||(Xdown==0&&Cdown==0)){
+                int toaccept=0;
+                int todie=0;
                 if(pins[i].zpoint==0){
                   if(Zdown==0){
                     pins[i].zpoint=1;
@@ -194,10 +208,10 @@ void* taiko(void *arg){
                 }else if(pins[i].zpoint==1&&Zdown==1){
                   pins[i].zpoint++;
                   if(pins[i].color==0){
-                    if(pins[i].size==1&&pins[i].state==accept)score+=100;
-                    if(pins[i].state!=accept)score+=100;
-                    pins[i].state=accept;
-                  }else pins[i].state=dead;
+                    toaccept++;
+                  }else{
+                    todie++;
+                  }
                 }
                 if(pins[i].xpoint==0){
                   if(Xdown==0){
@@ -206,10 +220,10 @@ void* taiko(void *arg){
                 }else if(pins[i].xpoint==1&&Xdown==1){
                   pins[i].xpoint++;
                   if(pins[i].color==1){
-                    if(pins[i].size==1&&pins[i].state==accept)score+=100;
-                    if(pins[i].state!=accept)score+=100;
-                    pins[i].state=accept;
-                  }else pins[i].state=dead;
+                    toaccept++;
+                  }else{
+                    todie++;
+                  }
                 }
                 if(pins[i].cpoint==0){
                   if(Cdown==0){
@@ -218,10 +232,10 @@ void* taiko(void *arg){
                 }else if(pins[i].cpoint==1&&Cdown==1){
                   pins[i].cpoint++;
                   if(pins[i].color==1){
-                    if(pins[i].size==1&&pins[i].state==accept)score+=100;
-                    if(pins[i].state!=accept)score+=100;
-                    pins[i].state=accept;
-                  }else pins[i].state=dead;
+                    toaccept++;
+                  }else{
+                    todie++;
+                  }
                 }
                 if(pins[i].vpoint==0){
                   if(Vdown==0){
@@ -230,10 +244,35 @@ void* taiko(void *arg){
                 }else if(pins[i].vpoint==1&&Vdown==1){
                   pins[i].vpoint++;
                   if(pins[i].color==0){
-                    if(pins[i].size==1&&pins[i].state==accept)score+=100;
-                    if(pins[i].state!=accept)score+=100;
-                    pins[i].state=accept;
-                  }else pins[i].state=dead;
+                    toaccept++;
+                  }else{
+                    todie++;
+                  }
+                }
+                if(todie){
+                  pins[i].state=dead;
+                  count=0;
+                  combo=0;
+                  diescore+=100;
+                }
+                while(toaccept){
+                  toaccept--;
+                  showcombo=0;
+                  if(pins[i].size==1&&pins[i].state==accept)score+=100;
+                  if(pins[i].state!=accept){
+                    score+=100;
+                    count++;
+                    if(combo!=0)combo++;
+                    if(pins[i].combo!=0)combo=1;
+                    if(i==hitcnt-1||pins[i+1].combo!=0){
+                      if(combo!=0){
+                        score+=300;
+                        showcombo=nowtime;
+                        thecombo=combo;
+                      }else diescore+=300;
+                    }
+                  }
+                  pins[i].state=accept;
                 }
               }
             }
@@ -263,6 +302,46 @@ void* taiko(void *arg){
             buffer[(k+y)*width+j+x]=numbers[place][k*numberwidth+j];
         toprint/=10;
       }
+      toprint=count;
+      for(i=0;i<4;i++){
+        int x=90-i*20,y=285,place=toprint%10+20;
+        for(j=0;j<20;j++)
+          for(k=0;k<30;k++)
+            if(numbers[place][k*20+j]!=0)buffer[(k+y)*width+j+x]=numbers[place][k*20+j];
+        toprint/=10;
+      }
+      if(nowtime-showcombo<500){
+        thecombo%=100;
+        int x=180,y=150;
+        if(thecombo>=10){
+          for(j=0;j<numberwidth;j++)
+            for(k=0;k<numberheight;k++)
+              if(numbers[thecombo/10+10][k*numberwidth+j]!=0)buffer[(k+y)*width+j+x]=numbers[thecombo/10+10][k*numberwidth+j];
+          x+=numberwidth;
+        }
+        for(j=0;j<numberwidth;j++)
+          for(k=0;k<numberheight;k++)
+            if(numbers[thecombo%10+10][k*numberwidth+j]!=0)buffer[(k+y)*width+j+x]=numbers[thecombo%10+10][k*numberwidth+j];
+        x=30;
+        for(j=0;j<150;j++)
+          for(k=0;k<60;k++)
+            if(comboX[k*150+j]!=0)buffer[(k+y)*width+j+x]=comboX[k*150+j];
+      }
+      if(score+diescore==0)toprint=100;
+      else toprint=score*100/(score+diescore);
+      i=0;
+      while(toprint){
+        int x=700-i*45,y=80,place=toprint%10;
+        for(j=0;j<numberwidth;j++)
+          for(k=0;k<numberheight;k++)
+            buffer[(k+y)*width+j+x]=numbers[place][k*numberwidth+j];
+        toprint/=10;
+        i++;
+      }
+      int x=745,y=80;
+      for(j=0;j<numberwidth;j++)
+        for(k=0;k<numberheight;k++)
+          buffer[(k+y)*width+j+x]=numbers[30][k*numberwidth+j];
       copyToGraph(buffer);
     }
   }
