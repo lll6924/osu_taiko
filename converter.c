@@ -47,7 +47,7 @@ int convert(char * filename, char *outFilename, struct pin* data) {
             if (type & 1) data[cnt].type = note;
 
             data[cnt].size = (hitsound & 4) ? 1 : 0;
-            data[cnt].color = (hitsound & 8) ? 1 : 0;
+            data[cnt].color = (hitsound & 8) ? 0 : 1;
 
             data[cnt].range = 50;
 
@@ -102,10 +102,10 @@ struct pin* getMaps(int id, char* mem) {
     return data;
 };
 
-int main() {
+/*int main() {
     char ** filenames = (char **) malloc(sizeof(char *) * MAX_MAPS);
-    filenames[0] = "test.osu";
-    filenames[1] = "test.osu";
+    filenames[0] = "test0.osu";
+    filenames[1] = "test1.osu";
     char *mem;
     mem = generate_bin(filenames, 2);
     struct pin* data = getMaps(1, mem);
@@ -113,4 +113,4 @@ int main() {
     free(filenames);
     free(mem);
     return 0;
-}
+}*/

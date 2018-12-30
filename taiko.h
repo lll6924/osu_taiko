@@ -39,4 +39,10 @@ struct beatMap{
     int offset;
     int len;
 };
+
+struct pin* getMaps(int id, char* mem);
+
+int getHitCnt(int id, char* mem);
+
+char* generate_bin(char **names, int filenum);
 #endif
