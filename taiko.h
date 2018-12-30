@@ -7,7 +7,7 @@
 static const int targety=300;
 static const int targetx=200;
 
-static const int drumx=80;
+static const int drumx=70;
 static const int drumy=300;
 
 static const int Z=122;

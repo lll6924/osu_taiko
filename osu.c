@@ -9,6 +9,10 @@ unsigned char* bkg;
 
 unsigned char** numbers;
 
+unsigned char** getNumbers(){
+  return numbers;
+}
+
 struct pin* taikomap;
 int hitcnt;
 
@@ -193,8 +197,10 @@ int main (int argc,char **argv){
   int i;
   for(i=0;i<10;i++){
     numbers[i]=(unsigned char*)malloc(numberwidth*numberheight*sizeof(char));
-    FILE *fp=fopen("bkg.bin","rb");
-    fread(bkg,1,width*height*sizeof(char),fp);
+    char ss[17]="bins/score-x.bin\0";
+    ss[11]=i+'0';
+    FILE *fp=fopen(ss,"rb");
+    fread(numbers[i],1,numberwidth*numberheight*sizeof(char),fp);
     fclose(fp);
   }
   keys=(unsigned char *)malloc(8192 * sizeof(char));
@@ -202,7 +208,6 @@ int main (int argc,char **argv){
   int pd;
   pthread_t tid;
   pd = pthread_create(&tid,NULL,taiko,NULL);
-  int i;
   for(i=0;i<8192;i++)
     keys[i]=0;
 

@@ -11,6 +11,8 @@ unsigned char* buffer;
 
 unsigned char* bkg;
 
+unsigned char** numbers;
+
 struct pin* pins;
 
 
@@ -64,6 +66,7 @@ void* taiko(void *arg){
   buffer=(unsigned char *)malloc(width*height * sizeof(unsigned char));
   keymem=getKeyMem();
   bkg=getbkg();
+  numbers=getNumbers();
   int i,j,k;
   unsigned int lasttime,nowtime;
   lasttime=getTime();
@@ -222,6 +225,14 @@ void* taiko(void *arg){
         }
       }
       //printf("%d\n",score);
+      int toprint=score;
+      for(i=0;i<8;i++){
+        int x=745-i*45,y=10,place=toprint%10;
+        for(j=0;j<numberwidth;j++)
+          for(k=0;k<numberheight;k++)
+            buffer[(k+y)*width+j+x]=numbers[place][k*numberwidth+j];
+        toprint/=10;
+      }
       copyToGraph(buffer);
     }
   }
