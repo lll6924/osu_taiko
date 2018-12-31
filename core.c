@@ -83,6 +83,9 @@ int keydown(int val){
   return ((*keymem&MASKS[val])!=0);
 }
 
+int stack[width*height+1];
+
+
 void drawgraph(int x,int y,int Width,int Height,unsigned char* source){
   int j,k;
   for(j=0;j<Width;j++)
@@ -91,7 +94,10 @@ void drawgraph(int x,int y,int Width,int Height,unsigned char* source){
       if(X<0||Y<0||X>=width||Y>=height){
         continue;
       }
-      if(source[k*Width+j]!=0)buffer[(k+y)*width+j+x]=source[k*Width+j];
+      if(source[k*Width+j]!=0){
+        buffer[(k+y)*width+j+x]=source[k*Width+j];
+        stack[++stack[0]]=(k+y)*width+j+x;
+      }
     }
 }
 
@@ -163,11 +169,12 @@ void* taiko(void *arg){
     }if(state==1){
       
       gametime+=4;
-      drawgraph(0,0,width,height,bkg);
-      for(i=0;i<width;i++)
+      stack[0]=0;
+      //drawgraph(0,0,width,height,bkg);
+      /*for(i=0;i<width;i++)
         for(j=220;j<380;j++)
           if(i<140)buffer[j*width+i]=(unsigned char)(219);
-          else buffer[j*width+i]=(unsigned char)(146);
+          else buffer[j*width+i]=(unsigned char)(146);*/
       for(int i=-40;i<40;i++)
         for(int j=-40;j<40;j++){
           int x,y,d;
@@ -336,6 +343,8 @@ void* taiko(void *arg){
       }
       drawgraph(745,80,numberwidth,numberheight,numbers[30]);
       copyToGraph(buffer);
+      for(i=1;i<=stack[0];i++)
+        buffer[stack[i]]=bkg[stack[i]];
     }
   }
 }
