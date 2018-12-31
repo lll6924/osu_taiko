@@ -19,6 +19,12 @@ unsigned char** getNumbers(){
   return numbers;
 }
 
+unsigned char** faces;
+
+unsigned char** getFaces(){
+  return faces;
+}
+
 unsigned char *mapmem;
 
 unsigned char* getMapMem(){
@@ -264,6 +270,24 @@ int main (int argc,char **argv){
   fp=fopen("bins/score-percent.bin","rb");
   fread(numbers[30],1,numberwidth*numberheight*sizeof(char),fp);
   fclose(fp);
+  
+  faces=(unsigned char**)malloc(4*sizeof(char*));
+  for(i=0;i<2;i++){
+    faces[i]=(unsigned char*)malloc(70*70*sizeof(char));
+    char ss[15]="bins/facex.bin\0";
+    ss[9]=i+'0';
+    FILE *fp=fopen(ss,"rb");
+    fread(faces[i],1,70*70*sizeof(char),fp);
+    fclose(fp);
+  }
+  for(i=2;i<4;i++){
+    faces[i]=(unsigned char*)malloc(90*90*sizeof(char));
+    char ss[15]="bins/facex.bin\0";
+    ss[9]=i+'0';
+    FILE *fp=fopen(ss,"rb");
+    fread(faces[i],1,90*90*sizeof(char),fp);
+    fclose(fp);
+  }
   keys=(unsigned char *)malloc(sizeof(char));
   todraw=gdk_pixbuf_new (GDK_COLORSPACE_RGB,FALSE,8,width,height);
   int pd;

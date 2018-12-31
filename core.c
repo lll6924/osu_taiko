@@ -2,7 +2,7 @@
 #include "taiko.h"
 #include <stdio.h>
 
-const int maxspeed=5;
+const int maxspeed=1;
 int hitcnt;
 
 unsigned char* keymem;
@@ -12,6 +12,8 @@ unsigned char* buffer;
 unsigned char* comboX;
 
 unsigned char* bkg;
+
+unsigned char** faces;
 
 unsigned char** numbers;
 
@@ -81,6 +83,18 @@ int keydown(int val){
   return ((*keymem&MASKS[val])!=0);
 }
 
+void drawgraph(int x,int y,int Width,int Height,unsigned char* source){
+  int j,k;
+  for(j=0;j<Width;j++)
+    for(k=0;k<Height;k++){
+      int X=j+x,Y=k+y;
+      if(X<0||Y<0||X>=width||Y>=height){
+        continue;
+      }
+      if(source[k*Width+j]!=0)buffer[(k+y)*width+j+x]=source[k*Width+j];
+    }
+}
+
 void InputUpdate(){
   Zdown=keydown(0);
   Xdown=keydown(1);
@@ -88,12 +102,15 @@ void InputUpdate(){
   Vdown=keydown(3);
 }
 
+unsigned char drumboard[121*121];
+
 void* taiko(void *arg){
   buffer=(unsigned char *)malloc(width*height * sizeof(unsigned char));
   keymem=getKeyMem();
   bkg=getbkg();
   comboX=getCombo();
   numbers=getNumbers();
+  faces=getFaces();
   mapmem=getMapMem();
   int i,j,k;
   unsigned int lasttime,nowtime;
@@ -114,6 +131,25 @@ void* taiko(void *arg){
   unsigned int showcombo=0;
   int thecombo=0;
   int state=0;
+  for(int i=-60;i<=60;i++)
+    for(int j=-60;j<=60;j++){
+      int d,x,y;
+      x=i+60;
+      y=j+60;
+      drumboard[x+y*121]=0;
+      d=dist(i,j,0,0);
+      if(d<50*50){
+        if(i==0)drumboard[y*121+x]=(unsigned char)(219);
+        else if(i<0)drumboard[y*121+x]=2;
+        else drumboard[y*121+x]=3;
+      }else if(d<52*52){
+        drumboard[y*121+x]=(unsigned char)(219);
+      }else if(d<60*60){
+        if(i==0)drumboard[y*121+x]=(unsigned char)(219);
+        else if(i<0)drumboard[y*121+x]=1;
+        else drumboard[y*121+x]=4;
+      }
+    }
   while(1){
     nowtime=getTime();
     while(nowtime-lasttime<maxspeed){
@@ -121,53 +157,41 @@ void* taiko(void *arg){
     }
     lasttime=nowtime;
     InputUpdate();
-    //printf("%u\n",nowtime);
+    printf("%u\n",nowtime);
     if(state==0){
       if(Zdown==1)state++;
     }if(state==1){
       
       gametime+=4;
-      for(i=0;i<width;i++)
-        for(j=0;j<height;j++)
-          buffer[j*width+i]=bkg[j*width+i];
+      drawgraph(0,0,width,height,bkg);
       for(i=0;i<width;i++)
         for(j=220;j<380;j++)
           if(i<140)buffer[j*width+i]=(unsigned char)(219);
           else buffer[j*width+i]=(unsigned char)(146);
-      for(int i=-100;i<100;i++)
-        for(int j=-100;j<100;j++){
+      for(int i=-40;i<40;i++)
+        for(int j=-40;j<40;j++){
           int x,y,d;
           x=targetx+i;
           y=targety+j;
-          d=dist(x,y,targetx,targety);
-          if(d<40*40)buffer[y*width+x]=(unsigned char)(73);
+          //d=dist(x,y,targetx,targety);
+          buffer[y*width+x]=(unsigned char)(73);
         }
-      for(int i=-100;i<100;i++)
-        for(int j=-100;j<100;j++){
-          int x,y,d;
+      for(int i=-60;i<=60;i++)
+        for(int j=-60;j<=60;j++){
+          int x,y,d,X,Y;
           x=drumx+i;
           y=drumy+j;
-          d=dist(x,y,drumx,drumy);
-          if(d<50*50){
-            if(x==drumx)buffer[y*width+x]=(unsigned char)(219);
-            else if(x<drumx){
-              if(Xdown)buffer[y*width+x]=(unsigned char)(229);
-              else buffer[y*width+x]=(unsigned char)(140);
-            }else{
-              if(Cdown)buffer[y*width+x]=(unsigned char)(229);
-              else buffer[y*width+x]=(unsigned char)(140);
-            }
-          }else if(d<52*52){
-            buffer[y*width+x]=(unsigned char)(219);
-          }else if(d<60*60){
-            if(x==drumx)buffer[y*width+x]=(unsigned char)(219);
-            else if(x<drumx){
-              if(Zdown)buffer[y*width+x]=(unsigned char)(39);
-              else buffer[y*width+x]=(unsigned char)(140);
-            }else{
-              if(Vdown)buffer[y*width+x]=(unsigned char)(39);
-              else buffer[y*width+x]=(unsigned char)(140);
-            }
+          X=i+60;
+          Y=j+60;
+          unsigned char todraw=drumboard[Y*121+X];
+          if(todraw==0)continue;
+          buffer[y*width+x]=todraw;
+          if(todraw<5){
+            buffer[y*width+x]=(unsigned char)(140);
+            if(todraw==1&&Zdown)buffer[y*width+x]=(unsigned char)(39);
+            if(todraw==2&&Xdown)buffer[y*width+x]=(unsigned char)(229);
+            if(todraw==3&&Cdown)buffer[y*width+x]=(unsigned char)(229);
+            if(todraw==4&&Vdown)buffer[y*width+x]=(unsigned char)(39);
           }
         }
       for(i=begin;i<hitcnt;i++){
@@ -277,71 +301,40 @@ void* taiko(void *arg){
               }
             }
           }
-          for(j=-100;j<100;j++)
-            for(k=-100;k<100;k++){
-              int x,y;
-              x=pins[i].locationx-gametime+j;
-              y=pins[i].locationy+k;
-              if(x>=0&&y>=0&&x<width&&y<height&&dist(x,y,pins[i].locationx-gametime,pins[i].locationy)<pins[i].r2){
-                if(pins[i].state==accept){
-                  buffer[y*width+x]=(unsigned char)(216);
-                }else if(pins[i].state==dead){
-                  buffer[y*width+x]=(unsigned char)(37);
-                }else if(pins[i].color==1)buffer[y*width+x]=(unsigned char)(233);
-                else buffer[y*width+x]=(unsigned char)(71);
-              }
-            }
+          int r=pins[i].size*10+35;
+          drawgraph(pins[i].locationx-gametime-r,pins[i].locationy-r,r*2,r*2,faces[pins[i].size*2+pins[i].color]);
         }
       }
       //printf("%d\n",score);
       int toprint=score;
       for(i=0;i<8;i++){
-        int x=745-i*45,y=10,place=toprint%10;
-        for(j=0;j<numberwidth;j++)
-          for(k=0;k<numberheight;k++)
-            buffer[(k+y)*width+j+x]=numbers[place][k*numberwidth+j];
+        drawgraph(745-i*45,10,numberwidth,numberheight,numbers[toprint%10]);
         toprint/=10;
       }
       toprint=count;
       for(i=0;i<4;i++){
-        int x=90-i*20,y=285,place=toprint%10+20;
-        for(j=0;j<20;j++)
-          for(k=0;k<30;k++)
-            if(numbers[place][k*20+j]!=0)buffer[(k+y)*width+j+x]=numbers[place][k*20+j];
+        drawgraph(90-i*20,285,20,30,numbers[toprint%10+20]);
         toprint/=10;
       }
       if(nowtime-showcombo<500){
         thecombo%=100;
-        int x=180,y=150;
+        int x=180;
         if(thecombo>=10){
-          for(j=0;j<numberwidth;j++)
-            for(k=0;k<numberheight;k++)
-              if(numbers[thecombo/10+10][k*numberwidth+j]!=0)buffer[(k+y)*width+j+x]=numbers[thecombo/10+10][k*numberwidth+j];
+          drawgraph(x,150,numberwidth,numberheight,numbers[thecombo/10+10]);
           x+=numberwidth;
         }
-        for(j=0;j<numberwidth;j++)
-          for(k=0;k<numberheight;k++)
-            if(numbers[thecombo%10+10][k*numberwidth+j]!=0)buffer[(k+y)*width+j+x]=numbers[thecombo%10+10][k*numberwidth+j];
-        x=30;
-        for(j=0;j<150;j++)
-          for(k=0;k<60;k++)
-            if(comboX[k*150+j]!=0)buffer[(k+y)*width+j+x]=comboX[k*150+j];
+        drawgraph(x,150,numberwidth,numberheight,numbers[thecombo%10+10]);
+        drawgraph(30,150,150,60,comboX);
       }
       if(score+diescore==0)toprint=100;
       else toprint=score*100/(score+diescore);
       i=0;
       while(toprint){
-        int x=700-i*45,y=80,place=toprint%10;
-        for(j=0;j<numberwidth;j++)
-          for(k=0;k<numberheight;k++)
-            buffer[(k+y)*width+j+x]=numbers[place][k*numberwidth+j];
+        drawgraph(700-i*45,80,numberwidth,numberheight,numbers[toprint%10]);
         toprint/=10;
         i++;
       }
-      int x=745,y=80;
-      for(j=0;j<numberwidth;j++)
-        for(k=0;k<numberheight;k++)
-          buffer[(k+y)*width+j+x]=numbers[30][k*numberwidth+j];
+      drawgraph(745,80,numberwidth,numberheight,numbers[30]);
       copyToGraph(buffer);
     }
   }

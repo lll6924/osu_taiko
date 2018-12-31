@@ -21,6 +21,8 @@ GdkPixbuf* getDrawer();
 
 unsigned char** getNumbers();
 
+unsigned char** getFaces();
+
 unsigned char* getMapMem();
 
 unsigned char* getCombo();
