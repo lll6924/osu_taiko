@@ -7,10 +7,10 @@ int main() {
         switch (ch) {
             case 'a': sound(0);break;
             case 'b': sound(1);break;
-            case 'c': sound(2);break;
             case 's': stopAll();break;
-            default : break;
+            default : sound(2);break;
         }
     }
+    closeSoundPlayer();
     return 0;
 }
