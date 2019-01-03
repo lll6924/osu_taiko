@@ -4,6 +4,8 @@
 
 unsigned char *data, *picHeader, *textHeader;
 
+int abs_addr = 0x8064e848;
+
 char face_str[20] = "bins/facex.bin";
 char score_str[20] = "bins/score-x.bin";
 char combo_str[20] = "bins/combo-x.bin";
@@ -12,7 +14,7 @@ char count_str[20] = "bins/count-x.bin";
 int generate_pic_bin(char **bin_filenames, int filenum, unsigned char *headAddr) {
     int i = 0, offset, len;
 
-    unsigned char **header = (unsigned char **) headAddr;
+    int *header = (int *) headAddr;
     offset = filenum * sizeof(char *);
 
     printf("%d\n", offset);
@@ -28,7 +30,8 @@ int generate_pic_bin(char **bin_filenames, int filenum, unsigned char *headAddr)
             continue;
         }
         else printf("This pic length: %d\n", len);
-        header[i] = ptr;
+        header[i] = ptr - data + abs_addr;
+        printf("header: %x\n", header[i]);
         ptr += len;
         offset += len;
         ///printf("%d\n", offset);
@@ -114,9 +117,9 @@ unsigned char* generate_mem_bin() {
 void release_mem(unsigned char* data) {
     free(data);
 }
-/*int main() {
+int main() {
     unsigned char* memory = generate_mem_bin();
     release_mem(memory);
     //printf("%d\n", sizeof(char *));
     return 0;
-}*/
+}
