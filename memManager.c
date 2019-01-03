@@ -1,5 +1,5 @@
 #include "memManager.h"
-#define PIC_NUM 3
+#define PIC_NUM 40
 #define MAX_BINFILE_SIZE 500000
 
 unsigned char *data, *picHeader, *textHeader;
@@ -89,7 +89,7 @@ unsigned char* generate_mem_bin() {
 
     ///printf("name: %s\n", pic_filenames[3]);
 
-    pic_filenames[3] = "bins/face0.bin";
+    //qpic_filenames[3] = "bins/face0.bin";
 
     pic_filenames[37] = "bins/score-percent.bin";
 
