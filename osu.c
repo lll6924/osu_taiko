@@ -42,14 +42,6 @@ unsigned char* getInstructions(){
   return instructions;
 }
 
-unsigned char* soundStatus;
-
-unsigned char playing[10];
-
-unsigned char* getSoundStatus(){
-  return soundStatus;
-}
-
 unsigned int getTime()
 {
    struct timeval tv;
@@ -59,7 +51,7 @@ unsigned int getTime()
 
 void* taiko(void *arg);
 
-unsigned char* keys;
+unsigned char keys;
 
 unsigned char* serial;
 
@@ -75,21 +67,19 @@ unsigned char getSerial(){
 int getSerialNumber(){
   int ret=serialR-serialL;
   if(ret<0)ret+=16;
+  //printf("%d %d\n",serialL,serialR);
   return ret;
 }
 
 void putSerial(unsigned char t){
   serial[serialR]=t;
   serialR++;
+  //printf("wtfit?!!!%u\n",t);
   if(serialR>15)serialR=0;
 }
 
 int counter;
 
-
-unsigned char* getKeyMem(){
-  return keys;
-}
 
 
 GdkPixbuf* todraw;
@@ -153,31 +143,22 @@ gboolean deal_time( gpointer* label )
   cairo_paint (cr);
   cairo_destroy (cr);
   gtk_widget_queue_draw_area (drawing_area, 0,0,width,height);
-  if(soundStatus[songs]==1)sound(2);
-  soundStatus[songs]=0;
-  int i;
-  for(i=0;i<songs;i++){
-    printf("status %d %d %d\n",i,soundStatus[i],playing[i]);
-    if(soundStatus[i]!=1&&playing[i]==1){
-      stopAll();
-      printf("stopping\n");
-      playing[i]=0;
-    }
-  }
-  for(i=0;i<songs;i++){
-    if(soundStatus[i]==1&&playing[i]==0){
-      sound(i);
-      playing[i]=1;
-      printf("playing %d\n",i);
-    }
+  while(getGameSerialNumber()){
+    unsigned char serial=getGameSerial();
+    printf("%u\n",serial);
+    if(serial==0)stopAll();
+      else if((serial&3)==0)stop(serial/4);
+      else if((serial&3)==1)sound(serial/4,0);
+      else if((serial&3)==2)sound(serial/4,-1);
   }
   return TRUE;
 }
 
 void* stopSong(int song){
-  *keys|=MASKS[7];
-  putSerial(*keys);
-  *keys&=~MASKS[7];
+  keys|=MASKS[7];
+  //printf("songid:%d\n",song);
+  putSerial(keys);
+  keys&=~MASKS[7];
 }
 
 gboolean time_counter(gpointer* label){
@@ -192,24 +173,24 @@ gboolean deal_key_press(GtkWidget *widget, GdkEventKey  *event, gpointer data)
   int key = event->keyval; // 获取键盘键值类型
   switch(key){
     case Z:
-      *keys|=MASKS[0];
-      putSerial(*keys);
+      keys|=MASKS[0];
+      putSerial(keys);
       break;
     case X:
-      *keys|=MASKS[1];
-      putSerial(*keys);
+      keys|=MASKS[1];
+      putSerial(keys);
       break;
     case C:
-      *keys|=MASKS[2];
-      putSerial(*keys);
+      keys|=MASKS[2];
+      putSerial(keys);
       break;
     case V:
-      *keys|=MASKS[3];
-      putSerial(*keys);
+      keys|=MASKS[3];
+      putSerial(keys);
       break;
     case Q:
-      *keys|=MASKS[4];
-      putSerial(*keys);
+      keys|=MASKS[4];
+      putSerial(keys);
       break;
     default:
       break;
@@ -225,24 +206,24 @@ gboolean deal_key_release(GtkWidget *widget, GdkEventKey  *event, gpointer data)
   int key = event->keyval; // 获取键盘键值类型
   switch(key){
     case Z:
-      *keys&=~MASKS[0];
-      putSerial(*keys);
+      keys&=~MASKS[0];
+      putSerial(keys);
       break;
     case X:
-      *keys&=~MASKS[1];
-      putSerial(*keys);
+      keys&=~MASKS[1];
+      putSerial(keys);
       break;
     case C:
-      *keys&=~MASKS[2];
-      putSerial(*keys);
+      keys&=~MASKS[2];
+      putSerial(keys);
       break;
     case V:
-      *keys&=~MASKS[3];
-      putSerial(*keys);
+      keys&=~MASKS[3];
+      putSerial(keys);
       break;
     case Q:
-      *keys&=~MASKS[4];
-      putSerial(*keys);
+      keys&=~MASKS[4];
+      putSerial(keys);
       break;
     default:
       break;
@@ -370,11 +351,6 @@ int main (int argc,char **argv){
     fread(faces[i],1,90*90*sizeof(char),fp);
     fclose(fp);
   }
-  soundStatus=(unsigned char*)malloc(10*sizeof(char));
-  for(i=0;i<10;i++){
-    soundStatus[i]=0;
-    playing[i]=0;
-  }
   initSoundPlayer(stopSong);
   keys=(unsigned char *)malloc(sizeof(char));
   serial=(unsigned char *)malloc(16*sizeof(char));
@@ -384,7 +360,7 @@ int main (int argc,char **argv){
   int pd;
   pthread_t tid;
   pd = pthread_create(&tid,NULL,taiko,NULL);
-  *keys=0;
+  keys=0;
 
   GtkApplication *app;
   int status;

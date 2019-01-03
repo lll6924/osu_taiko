@@ -23,33 +23,32 @@ unsigned char* instructions;
 
 unsigned char* mapmem;
 
-unsigned char* soundStatus;
-
 //unsigned char* VGA;
 
 struct pin* pins;
 
-unsigned char serial[16];
+unsigned char gameserial[16];
 
-int serialL,serialR;
+int gameserialL,gameserialR;
 
 unsigned char getGameSerial(){
-  unsigned char ret=serial[serialL];
-  serialL++;
-  if(serialL>15)serialL=0;
+  unsigned char ret=gameserial[gameserialL];
+  //printf("%d %d\n",gameserialL,gameserialR);
+  gameserialL++;
+  if(gameserialL>15)gameserialL=0;
   return ret;
 }
 
 int getGameSerialNumber(){
-  int ret=serialR-serialL;
+  int ret=gameserialR-gameserialL;
   if(ret<0)ret+=16;
   return ret;
 }
 
 void putGameSerial(unsigned char t){
-  serial[serialR]=t;
-  serialR++;
-  if(serialR>15)serialR=0;
+  gameserial[gameserialR]=t;
+  gameserialR++;
+  if(gameserialR>15)gameserialR=0;
 }
 
 int Zdown,Xdown,Cdown,Vdown,Qdown,lastZdown,lastXdown,lastCdown,lastVdown,lastQdown;
@@ -146,7 +145,7 @@ void InputUpdate(){
 unsigned char drumboard[121*121];
 
 void* taiko(void *arg){
-  serialL=serialR=0;
+  gameserialL=gameserialR=0;
   buffer=(unsigned char *)malloc(width*height * sizeof(unsigned char));
   keymem=0;
   bkg=getbkg();
@@ -156,16 +155,17 @@ void* taiko(void *arg){
   mapmem=getMapMem();
   instructions=getInstructions();
   //VGA=getVGA();
-  soundStatus=getSoundStatus();
   int i,j,k;
   unsigned int lasttime,nowtime;
   lasttime=getTime();
   //pins=(struct pin *)malloc(128 * sizeof(struct pin));
   int begin,gametime,score,diescore,count,combo,showcombo,thecombo;
   int state=0;
+  int nobgm=0;
+  int songstop=0;
   song=0;
   isauto=0;
-  soundStatus[song]=1;
+  putGameSerial(song*4+2);//1放一遍,2洗脑
   for(j=0;j<width;j++)
     for(k=0;k<height;k++)
       buffer[k*width+j]=bkg[k*width+j];
@@ -191,6 +191,7 @@ void* taiko(void *arg){
       }
     }
   while(1){
+    songstop=0;
     nowtime=getTime();
     while((int)(nowtime-lasttime)<maxspeed){
       nowtime=getTime();
@@ -198,23 +199,23 @@ void* taiko(void *arg){
     lasttime=nowtime;
     while(getSerialNumber()){
       keymem=getSerial();
+      //printf("  %u\n",keymem);
       if(keydown(7)){
-        state=0;
-        soundStatus[song]=0;
-        for(j=0;j<width;j++)
-          for(k=0;k<height;k++)
-            buffer[k*width+j]=bkg[k*width+j];
-        drawgraph(325,200,150,200,instructions,0);
-        copyToGraph(buffer);
+        songstop=1;
       }
     }
     InputUpdate();
-    if((Zdown&&lastZdown==0)||(Xdown&&lastXdown==0)||(Cdown&&lastCdown==0)||(Vdown&&lastVdown==0)){
-      soundStatus[songs]=1;
+    if((Zdown&&lastZdown==0)||(Vdown&&lastVdown==0)){
+      putGameSerial(songs*4+1);
+    }
+    if((Xdown&&lastXdown==0)||(Cdown&&lastCdown==0)){
+      putGameSerial((songs+1)*4+1);
     }
     if(Qdown&&lastQdown==0){
       state=0;
-      soundStatus[song]=0;
+      nobgm=1;
+      lasttime+=500;
+      putGameSerial(0);
       for(j=0;j<width;j++)
         for(k=0;k<height;k++)
           buffer[k*width+j]=bkg[k*width+j];
@@ -222,15 +223,20 @@ void* taiko(void *arg){
       copyToGraph(buffer);
       
     }
-    printf("%u %u %d\n",lasttime,nowtime,song);
+    printf("%u %d\n",nowtime,song);
     if(state==0){
+      if(nobgm==1){
+        nobgm=0;
+        putGameSerial(song*4+2);
+      }
       if(Zdown==1&&lastZdown==0){
         for(j=0;j<width;j++)
           for(k=0;k<height;k++)
             buffer[k*width+j]=bkg[k*width+j];
         copyToGraph(buffer);
-        soundStatus[song]=2;
+        putGameSerial(0);
         lasttime+=500;
+        nobgm=1;
         state=1;
         isauto=0;
         loadpins();
@@ -246,23 +252,22 @@ void* taiko(void *arg){
       if(Xdown==1&&lastXdown==0){
         song--;
         if(song<0)song=0;
-        for(i=0;i<songs;i++)
-          if(i==song)soundStatus[i]=1;
-          else soundStatus[i]=0;
+        putGameSerial(0);
+        putGameSerial(song*4+1);
       }
       if(Cdown==1&&lastCdown==0){
         song++;
         if(song>=songs)song=songs-1;
-        for(i=0;i<songs;i++)
-          if(i==song)soundStatus[i]=1;
-          else soundStatus[i]=0;
+        putGameSerial(0);
+        putGameSerial(song*4+1);
       }
       if(Vdown==1&&lastVdown==0){
         for(j=0;j<width;j++)
           for(k=0;k<height;k++)
             buffer[k*width+j]=bkg[k*width+j];
         copyToGraph(buffer);
-        soundStatus[song]=2;
+        putGameSerial(0);
+        nobgm=1;
         lasttime+=500;
         state=1;
         isauto=1;
@@ -277,9 +282,23 @@ void* taiko(void *arg){
         thecombo=0;
       }
     }else if(state==1){
-      printf("%d\n",begin);
-      if(soundStatus[song]==2)
-        soundStatus[song]=1;
+     // printf("%d %d\n\n",nobgm,songstop);
+      if(nobgm==0&&songstop){
+        state=0;
+        nobgm=1;
+        lasttime+=500;
+        putGameSerial(0);//0停止
+        for(j=0;j<width;j++)
+          for(k=0;k<height;k++)
+            buffer[k*width+j]=bkg[k*width+j];
+        drawgraph(325,200,150,200,instructions,0);
+        copyToGraph(buffer);
+        continue;
+      }
+      if(nobgm==1){
+        nobgm=0;
+        putGameSerial(song*4+1);
+      }
       gametime+=20;
       stack[0]=0;
       //drawgraph(0,0,width,height,bkg);
@@ -294,24 +313,6 @@ void* taiko(void *arg){
           y=targety+j;
           //d=dist(x,y,targetx,targety);
           buffer[y*width+x]=(unsigned char)(73);
-        }
-      for(int i=-60;i<=60;i++)
-        for(int j=-60;j<=60;j++){
-          int x,y,d,X,Y;
-          x=drumx+i;
-          y=drumy+j;
-          X=i+60;
-          Y=j+60;
-          unsigned char todraw=drumboard[Y*121+X];
-          if(todraw==0)continue;
-          buffer[y*width+x]=todraw;
-          if(todraw<5){
-            buffer[y*width+x]=(unsigned char)(140);
-            if(todraw==1&&Zdown)buffer[y*width+x]=(unsigned char)(39);
-            if(todraw==2&&Xdown)buffer[y*width+x]=(unsigned char)(229);
-            if(todraw==3&&Cdown)buffer[y*width+x]=(unsigned char)(229);
-            if(todraw==4&&Vdown)buffer[y*width+x]=(unsigned char)(39);
-          }
         }
       //printf("%d\n",begin);
       for(i=begin;i<hitcnt;i++){
@@ -402,10 +403,18 @@ void* taiko(void *arg){
                     diescore+=100;
                   }
                 
-                }else{
+                }else if(pins[i].Locationx-gametime>targetx-10&&pins[i].Locationx-gametime<targetx+10){
                   toaccept=1;
                   if(pins[i].size==1)toaccept=2;
-                  
+                  if(pins[i].color==0){
+                    putGameSerial(songs*4+1);
+                    Zdown=1;
+                    if(pins[i].size==1)Vdown=1;
+                  }else{
+                    putGameSerial((songs+1)*4+1);
+                    Xdown=1;
+                    if(pins[i].size==1)Cdown=1;
+                  }
                 }
                 while(toaccept){
                   toaccept--;
@@ -433,6 +442,24 @@ void* taiko(void *arg){
           drawgraph(pins[i].Locationx-gametime-r,pins[i].locationy-r,r*2,r*2,faces[pins[i].size*2+pins[i].color],1);
         }
       }
+      for(int i=-60;i<=60;i++)
+        for(int j=-60;j<=60;j++){
+          int x,y,d,X,Y;
+          x=drumx+i;
+          y=drumy+j;
+          X=i+60;
+          Y=j+60;
+          unsigned char todraw=drumboard[Y*121+X];
+          if(todraw==0)continue;
+          buffer[y*width+x]=todraw;
+          if(todraw<5){
+            buffer[y*width+x]=(unsigned char)(140);
+            if(todraw==1&&Zdown)buffer[y*width+x]=(unsigned char)(39);
+            if(todraw==2&&Xdown)buffer[y*width+x]=(unsigned char)(229);
+            if(todraw==3&&Cdown)buffer[y*width+x]=(unsigned char)(229);
+            if(todraw==4&&Vdown)buffer[y*width+x]=(unsigned char)(39);
+          }
+        }
       //printf("%d\n",score);
       int toprint=score;
       for(i=0;i<8;i++){
