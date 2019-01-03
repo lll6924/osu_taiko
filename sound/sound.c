@@ -21,7 +21,7 @@ int Init()
         return 0;
     }
 
-    result = Mix_AllocateChannels(2 * NUM_WAVEFORMS);
+    result = Mix_AllocateChannels(16);
     if( result < 0 )
     {
         fprintf(stderr, "Unable to allocate mixing channels: %s\n", SDL_GetError());
