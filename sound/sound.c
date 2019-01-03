@@ -1,10 +1,12 @@
 #include "sound.h"
-#define NUM_WAVEFORMS 3
+#define NUM_WAVEFORMS 5
 const char* _waveFileNames[NUM_WAVEFORMS] =
 {
     "1.wav",
     "2.wav",
     "hit.wav",
+    "hit2.wav",
+    "combo.wav"
 };
 
 Mix_Chunk* _sample[NUM_WAVEFORMS];
