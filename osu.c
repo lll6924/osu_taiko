@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include "osu.h"
 #include "taiko.h"
+#include "sound/sound.h"
 #include <sys/time.h>
 
 unsigned char* bkg;
@@ -33,6 +34,14 @@ unsigned char* getMapMem(){
 
 unsigned char* getbkg(){
   return bkg;
+}
+
+unsigned char* soundStatus;
+
+unsigned char playing[4];
+
+unsigned char* getSoundStatus(){
+  return soundStatus;
 }
 
 unsigned int getTime()
@@ -115,6 +124,18 @@ gboolean deal_time( gpointer* label )
   cairo_paint (cr);
   cairo_destroy (cr);
   gtk_widget_queue_draw_area (drawing_area, 0,0,width,height);
+  if(soundStatus[3]==1)sound(2);
+  soundStatus[3]=0;
+  int i;
+  for(i=0;i<2;i++){
+    if(soundStatus[i]==1&&playing[i]==0){
+      sound(i);
+      playing[i]=1;
+    }else if(soundStatus[i]==0&&playing[i]==1){
+      stopAll();
+      playing[i]=0;
+    }
+  }
   return TRUE;
 }
 
@@ -288,6 +309,12 @@ int main (int argc,char **argv){
     fread(faces[i],1,90*90*sizeof(char),fp);
     fclose(fp);
   }
+  soundStatus=(unsigned char*)malloc(4*sizeof(char));
+  for(i=0;i<4;i++){
+    soundStatus[i]=0;
+    playing[i]=0;
+  }
+  initSoundPlayer();
   keys=(unsigned char *)malloc(sizeof(char));
   todraw=gdk_pixbuf_new (GDK_COLORSPACE_RGB,FALSE,8,width,height);
   int pd;
@@ -302,6 +329,7 @@ int main (int argc,char **argv){
   g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
   status = g_application_run (G_APPLICATION (app), argc, argv);
   g_object_unref (app);
+  closeSoundPlayer();
 
   return status;
 }

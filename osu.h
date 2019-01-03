@@ -27,6 +27,6 @@ unsigned char* getMapMem();
 
 unsigned char* getCombo();
 
-void sound(int,int);
+unsigned char* getSoundStatus();
 
 #endif

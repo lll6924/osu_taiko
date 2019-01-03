@@ -3,6 +3,9 @@
 int main() {
     char ch;
     initSoundPlayer();
+    //printf("123\n");
+    ch=getchar();
+    //printf("%c",ch);
     while ((ch = getchar()) != 'q') {
         switch (ch) {
             case 'a': sound(0);break;

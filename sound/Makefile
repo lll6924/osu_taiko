@@ -1,7 +1,7 @@
 .PHONY: all
-all: testsound.exe
-testsound.exe: testsound.c sound.c sound.h
-	g++ -o testsound.exe testsound.c sound.c -lSDL2 -lSDL2_mixer
+all: testsound
+testsound: testsound.c sound.c sound.h
+	cc -o testsound testsound.c sound.c -lSDL2 -lSDL2_mixer -mmacosx-version-min=10.6
 .PHONY: clean
 clean:
-	del *.o *.exe
+	rm -r *.o testsound testsound.exe

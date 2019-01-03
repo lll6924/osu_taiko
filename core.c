@@ -2,7 +2,8 @@
 #include "taiko.h"
 #include <stdio.h>
 
-const int maxspeed=1;
+const int maxspeed=50;
+const int song=0;
 int hitcnt;
 
 unsigned char* keymem;
@@ -19,9 +20,13 @@ unsigned char** numbers;
 
 unsigned char* mapmem;
 
+unsigned char* soundStatus;
+
+//unsigned char* VGA;
+
 struct pin* pins;
 
-int Zdown,Xdown,Cdown,Vdown;
+int Zdown,Xdown,Cdown,Vdown,lastZdown,lastXdown,lastCdown,lastVdown;
 
 int getHitCount(int id, unsigned char* mem) {
     if (id < 0 || id >= MAX_MAPS) return -1;
@@ -38,16 +43,16 @@ unsigned char* getMap(int id, unsigned char* mem) {
 
 
 void loadpins(){
-  pins=(struct pin*)getMap(0,mapmem);
-  hitcnt=getHitCount(0,mapmem);
+  pins=(struct pin*)getMap(song,mapmem);
+  hitcnt=getHitCount(song,mapmem);
   int i;
   for(i=0;i<hitcnt;i++){
     pins[i].combo=(i%3==0);
-    pins[i].locationx*=3;
+    pins[i].locationx=4*pins[i].locationx+targetx;
     pins[i].type=note;
     pins[i].locationy=targety;
-    if(pins[i].size==1)pins[i].r2=45*45;
-    else pins[i].r2=35*35;
+    /*if(pins[i].size==1)*/pins[i].r2=2500;
+    //else pins[i].r2=35*35;
     pins[i].state=pending;
     pins[i].zpoint=0;
     pins[i].xpoint=0;
@@ -61,6 +66,8 @@ int dist(int x1,int y1,int x2,int y2){
 }
 
 void copyToGraph(unsigned char* source){
+  //for(i=1;i<stack[0];i++)
+    //VGA[stack[i]]=buffer[stack[i]];
   GdkPixbuf* todraw;
   todraw=getDrawer();
   guchar* pixels;
@@ -118,6 +125,8 @@ void* taiko(void *arg){
   numbers=getNumbers();
   faces=getFaces();
   mapmem=getMapMem();
+  //VGA=getVGA();
+  soundStatus=getSoundStatus();
   int i,j,k;
   unsigned int lasttime,nowtime;
   lasttime=getTime();
@@ -163,20 +172,23 @@ void* taiko(void *arg){
     }
     lasttime=nowtime;
     InputUpdate();
+    if((Zdown&&lastZdown==0)||(Xdown&&lastXdown==0)||(Cdown&&lastCdown==0)||(Vdown&&lastVdown==0)){
+      soundStatus[3]=1;
+    }
     printf("%u\n",nowtime);
     if(state==0){
       if(Zdown==1)state++;
     }if(state==1){
-      
-      gametime+=4;
+      soundStatus[song]=1;
+      gametime+=20;
       stack[0]=0;
       //drawgraph(0,0,width,height,bkg);
       /*for(i=0;i<width;i++)
         for(j=220;j<380;j++)
           if(i<140)buffer[j*width+i]=(unsigned char)(219);
           else buffer[j*width+i]=(unsigned char)(146);*/
-      for(int i=-40;i<40;i++)
-        for(int j=-40;j<40;j++){
+      for(int i=-60;i<60;i++)
+        for(int j=-60;j<60;j++){
           int x,y,d;
           x=targetx+i;
           y=targety+j;
@@ -201,16 +213,18 @@ void* taiko(void *arg){
             if(todraw==4&&Vdown)buffer[y*width+x]=(unsigned char)(39);
           }
         }
+      //printf("%d\n",begin);
       for(i=begin;i<hitcnt;i++){
         if(pins[i].state==accept){
-          pins[i].locationy-=2;
-          pins[i].locationx+=5;
-          pins[i].r2-=20;
+          pins[i].locationy-=10;
+          pins[i].locationx+=25;
+          pins[i].r2-=200;
           if(pins[i].r2<0)pins[i].state=trulydead;
         }else if(pins[i].state==dead){
-          pins[i].locationy+=2;
-          pins[i].locationx+=4;
-          pins[i].r2-=20;
+          //printf("die\n");
+          pins[i].locationy+=10;
+          pins[i].locationx+=20;
+          pins[i].r2-=200;
           if(pins[i].r2<0)pins[i].state=trulydead;
         }else if(pins[i].locationx<gametime-100||pins[i].locationy<-100||pins[i].locationy>=height+100){
           pins[i].state=trulydead;
@@ -227,7 +241,7 @@ void* taiko(void *arg){
         }
         if(pins[i].locationx-gametime>width+100)break;
         if(pins[i].locationy>-100&&pins[i].locationy<height+100){
-          if(pins[i].state==pending&&pins[i].locationx-gametime>targetx-pins[i].range/2&&pins[i].locationx-gametime<targetx+pins[i].range/2){
+          if(pins[i].state==pending&&pins[i].locationx-gametime>targetx-pins[i].range&&pins[i].locationx-gametime<targetx+pins[i].range){
             if(pins[i].type==note){
               if((Zdown==0&&Vdown==0)||(Xdown==0&&Cdown==0)){
                 int toaccept=0;
@@ -286,6 +300,8 @@ void* taiko(void *arg){
                   combo=0;
                   diescore+=100;
                 }
+                /*toaccept=1;
+                if(pins[i].size==1)toaccept=2;*/
                 while(toaccept){
                   toaccept--;
                   showcombo=0;
@@ -346,5 +362,9 @@ void* taiko(void *arg){
       for(i=1;i<=stack[0];i++)
         buffer[stack[i]]=bkg[stack[i]];
     }
+    lastZdown=Zdown;
+    lastXdown=Xdown;
+    lastCdown=Cdown;
+    lastVdown=Vdown;
   }
 }

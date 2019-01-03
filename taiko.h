@@ -6,7 +6,7 @@
 #define MAX_MAPS 10
 
 static const int targety=300;
-static const int targetx=200;
+static const int targetx=220;
 
 static const int drumx=70;
 static const int drumy=300;
