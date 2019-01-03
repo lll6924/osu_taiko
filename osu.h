@@ -12,8 +12,6 @@ static const int height=600;
 static const int numberwidth=40;
 static const int numberheight=60;
 
-unsigned char* getKeyMem();
-
 unsigned int getTime();
 
 unsigned char* getbkg();
@@ -30,10 +28,12 @@ unsigned char* getCombo();
 
 unsigned char* getInstructions();
 
-unsigned char* getSoundStatus();
-
 unsigned char getSerial();
 
 int getSerialNumber();
+
+unsigned char getGameSerial();
+
+int getGameSerialNumber();
 
 #endif
