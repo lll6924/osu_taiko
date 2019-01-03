@@ -27,6 +27,12 @@ unsigned char* getMapMem();
 
 unsigned char* getCombo();
 
+unsigned char* getInstructions();
+
 unsigned char* getSoundStatus();
+
+unsigned char getSerial();
+
+int getSerialNumber();
 
 #endif

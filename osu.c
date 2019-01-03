@@ -36,9 +36,15 @@ unsigned char* getbkg(){
   return bkg;
 }
 
+unsigned char* instructions;
+
+unsigned char* getInstructions(){
+  return instructions;
+}
+
 unsigned char* soundStatus;
 
-unsigned char playing[4];
+unsigned char playing[10];
 
 unsigned char* getSoundStatus(){
   return soundStatus;
@@ -54,6 +60,29 @@ unsigned int getTime()
 void* taiko(void *arg);
 
 unsigned char* keys;
+
+unsigned char* serial;
+
+int serialL,serialR;
+
+unsigned char getSerial(){
+  unsigned char ret=serial[serialL];
+  serialL++;
+  if(serialL>15)serialL=0;
+  return ret;
+}
+
+int getSerialNumber(){
+  int ret=serialR-serialL;
+  if(ret<0)ret+=16;
+  return ret;
+}
+
+void putSerial(unsigned char t){
+  serial[serialR]=t;
+  serialR++;
+  if(serialR>15)serialR=0;
+}
 
 int counter;
 
@@ -124,19 +153,31 @@ gboolean deal_time( gpointer* label )
   cairo_paint (cr);
   cairo_destroy (cr);
   gtk_widget_queue_draw_area (drawing_area, 0,0,width,height);
-  if(soundStatus[3]==1)sound(2);
-  soundStatus[3]=0;
+  if(soundStatus[songs]==1)sound(2);
+  soundStatus[songs]=0;
   int i;
-  for(i=0;i<2;i++){
-    if(soundStatus[i]==1&&playing[i]==0){
-      sound(i);
-      playing[i]=1;
-    }else if(soundStatus[i]==0&&playing[i]==1){
+  for(i=0;i<songs;i++){
+    printf("status %d %d %d\n",i,soundStatus[i],playing[i]);
+    if(soundStatus[i]!=1&&playing[i]==1){
       stopAll();
+      printf("stopping\n");
       playing[i]=0;
     }
   }
+  for(i=0;i<songs;i++){
+    if(soundStatus[i]==1&&playing[i]==0){
+      sound(i);
+      playing[i]=1;
+      printf("playing %d\n",i);
+    }
+  }
   return TRUE;
+}
+
+void* stopSong(int song){
+  *keys|=MASKS[7];
+  putSerial(*keys);
+  *keys&=~MASKS[7];
 }
 
 gboolean time_counter(gpointer* label){
@@ -152,15 +193,23 @@ gboolean deal_key_press(GtkWidget *widget, GdkEventKey  *event, gpointer data)
   switch(key){
     case Z:
       *keys|=MASKS[0];
+      putSerial(*keys);
       break;
     case X:
       *keys|=MASKS[1];
+      putSerial(*keys);
       break;
     case C:
       *keys|=MASKS[2];
+      putSerial(*keys);
       break;
     case V:
       *keys|=MASKS[3];
+      putSerial(*keys);
+      break;
+    case Q:
+      *keys|=MASKS[4];
+      putSerial(*keys);
       break;
     default:
       break;
@@ -177,15 +226,23 @@ gboolean deal_key_release(GtkWidget *widget, GdkEventKey  *event, gpointer data)
   switch(key){
     case Z:
       *keys&=~MASKS[0];
+      putSerial(*keys);
       break;
     case X:
       *keys&=~MASKS[1];
+      putSerial(*keys);
       break;
     case C:
       *keys&=~MASKS[2];
+      putSerial(*keys);
       break;
     case V:
       *keys&=~MASKS[3];
+      putSerial(*keys);
+      break;
+    case Q:
+      *keys&=~MASKS[4];
+      putSerial(*keys);
       break;
     default:
       break;
@@ -257,11 +314,15 @@ int main (int argc,char **argv){
   combo=(unsigned char*)malloc(150*60*sizeof(char));
   numbers=(unsigned char**)malloc(31*sizeof(char*));
   numbers[30]=(unsigned char*)malloc(numberwidth*numberheight*sizeof(char));
+  instructions=(unsigned char**)malloc(150*200*sizeof(char*));
   FILE *fp=fopen("bkg.bin","rb");
   fread(bkg,1,width*height*sizeof(char),fp);
   fclose(fp);
   fp=fopen("bins/combo.bin","rb");
   fread(combo,1,150*60*sizeof(char),fp);
+  fclose(fp);
+  fp=fopen("instructions.bin","rb");
+  fread(instructions,1,150*200*sizeof(char),fp);
   fclose(fp);
   int i;
   for(i=0;i<10;i++){
@@ -309,13 +370,16 @@ int main (int argc,char **argv){
     fread(faces[i],1,90*90*sizeof(char),fp);
     fclose(fp);
   }
-  soundStatus=(unsigned char*)malloc(4*sizeof(char));
-  for(i=0;i<4;i++){
+  soundStatus=(unsigned char*)malloc(10*sizeof(char));
+  for(i=0;i<10;i++){
     soundStatus[i]=0;
     playing[i]=0;
   }
-  initSoundPlayer();
+  initSoundPlayer(stopSong);
   keys=(unsigned char *)malloc(sizeof(char));
+  serial=(unsigned char *)malloc(16*sizeof(char));
+  serialL=0;
+  serialR=0;
   todraw=gdk_pixbuf_new (GDK_COLORSPACE_RGB,FALSE,8,width,height);
   int pd;
   pthread_t tid;

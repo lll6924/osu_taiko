@@ -3,10 +3,11 @@
 #include <stdio.h>
 
 const int maxspeed=50;
-const int song=0;
+int song;
+int isauto;
 int hitcnt;
 
-unsigned char* keymem;
+unsigned char keymem;
 
 unsigned char* buffer;
 
@@ -18,6 +19,8 @@ unsigned char** faces;
 
 unsigned char** numbers;
 
+unsigned char* instructions;
+
 unsigned char* mapmem;
 
 unsigned char* soundStatus;
@@ -26,7 +29,30 @@ unsigned char* soundStatus;
 
 struct pin* pins;
 
-int Zdown,Xdown,Cdown,Vdown,lastZdown,lastXdown,lastCdown,lastVdown;
+unsigned char serial[16];
+
+int serialL,serialR;
+
+unsigned char getGameSerial(){
+  unsigned char ret=serial[serialL];
+  serialL++;
+  if(serialL>15)serialL=0;
+  return ret;
+}
+
+int getGameSerialNumber(){
+  int ret=serialR-serialL;
+  if(ret<0)ret+=16;
+  return ret;
+}
+
+void putGameSerial(unsigned char t){
+  serial[serialR]=t;
+  serialR++;
+  if(serialR>15)serialR=0;
+}
+
+int Zdown,Xdown,Cdown,Vdown,Qdown,lastZdown,lastXdown,lastCdown,lastVdown,lastQdown;
 
 int getHitCount(int id, unsigned char* mem) {
     if (id < 0 || id >= MAX_MAPS) return -1;
@@ -45,10 +71,11 @@ unsigned char* getMap(int id, unsigned char* mem) {
 void loadpins(){
   pins=(struct pin*)getMap(song,mapmem);
   hitcnt=getHitCount(song,mapmem);
+  //printf("%d\n",hitcnt);
   int i;
   for(i=0;i<hitcnt;i++){
-    pins[i].combo=(i%3==0);
-    pins[i].locationx=4*pins[i].locationx+targetx;
+    //pins[i].combo=(i%3==0);
+    pins[i].Locationx=4*pins[i].locationx+targetx;
     pins[i].type=note;
     pins[i].locationy=targety;
     /*if(pins[i].size==1)*/pins[i].r2=2500;
@@ -87,13 +114,13 @@ void copyToGraph(unsigned char* source){
 }
 
 int keydown(int val){
-  return ((*keymem&MASKS[val])!=0);
+  return ((keymem&MASKS[val])!=0);
 }
 
 int stack[width*height+1];
 
 
-void drawgraph(int x,int y,int Width,int Height,unsigned char* source){
+void drawgraph(int x,int y,int Width,int Height,unsigned char* source,int stacked){
   int j,k;
   for(j=0;j<Width;j++)
     for(k=0;k<Height;k++){
@@ -103,7 +130,7 @@ void drawgraph(int x,int y,int Width,int Height,unsigned char* source){
       }
       if(source[k*Width+j]!=0){
         buffer[(k+y)*width+j+x]=source[k*Width+j];
-        stack[++stack[0]]=(k+y)*width+j+x;
+        if(stacked==1)stack[++stack[0]]=(k+y)*width+j+x;
       }
     }
 }
@@ -113,39 +140,37 @@ void InputUpdate(){
   Xdown=keydown(1);
   Cdown=keydown(2);
   Vdown=keydown(3);
+  Qdown=keydown(4);
 }
 
 unsigned char drumboard[121*121];
 
 void* taiko(void *arg){
+  serialL=serialR=0;
   buffer=(unsigned char *)malloc(width*height * sizeof(unsigned char));
-  keymem=getKeyMem();
+  keymem=0;
   bkg=getbkg();
   comboX=getCombo();
   numbers=getNumbers();
   faces=getFaces();
   mapmem=getMapMem();
+  instructions=getInstructions();
   //VGA=getVGA();
   soundStatus=getSoundStatus();
   int i,j,k;
   unsigned int lasttime,nowtime;
   lasttime=getTime();
   //pins=(struct pin *)malloc(128 * sizeof(struct pin));
-  loadpins();
-  int begin,gametime;
-  begin=0;
-  gametime=0;
-  for(i=0;i<width;i++)
-    for(j=0;j<height;j++)
-      buffer[j*width+i]=bkg[j*width+i];
-  copyToGraph(buffer);
-  int score=0;
-  int diescore=0;
-  int count=0;
-  int combo=0;
-  unsigned int showcombo=0;
-  int thecombo=0;
+  int begin,gametime,score,diescore,count,combo,showcombo,thecombo;
   int state=0;
+  song=0;
+  isauto=0;
+  soundStatus[song]=1;
+  for(j=0;j<width;j++)
+    for(k=0;k<height;k++)
+      buffer[k*width+j]=bkg[k*width+j];
+  drawgraph(325,200,150,200,instructions,0);
+  copyToGraph(buffer);
   for(int i=-60;i<=60;i++)
     for(int j=-60;j<=60;j++){
       int d,x,y;
@@ -167,19 +192,94 @@ void* taiko(void *arg){
     }
   while(1){
     nowtime=getTime();
-    while(nowtime-lasttime<maxspeed){
+    while((int)(nowtime-lasttime)<maxspeed){
       nowtime=getTime();
     }
     lasttime=nowtime;
+    while(getSerialNumber()){
+      keymem=getSerial();
+      if(keydown(7)){
+        state=0;
+        soundStatus[song]=0;
+        for(j=0;j<width;j++)
+          for(k=0;k<height;k++)
+            buffer[k*width+j]=bkg[k*width+j];
+        drawgraph(325,200,150,200,instructions,0);
+        copyToGraph(buffer);
+      }
+    }
     InputUpdate();
     if((Zdown&&lastZdown==0)||(Xdown&&lastXdown==0)||(Cdown&&lastCdown==0)||(Vdown&&lastVdown==0)){
-      soundStatus[3]=1;
+      soundStatus[songs]=1;
     }
-    printf("%u\n",nowtime);
+    if(Qdown&&lastQdown==0){
+      state=0;
+      soundStatus[song]=0;
+      for(j=0;j<width;j++)
+        for(k=0;k<height;k++)
+          buffer[k*width+j]=bkg[k*width+j];
+      drawgraph(325,200,150,200,instructions,0);
+      copyToGraph(buffer);
+      
+    }
+    printf("%u %u %d\n",lasttime,nowtime,song);
     if(state==0){
-      if(Zdown==1)state++;
-    }if(state==1){
-      soundStatus[song]=1;
+      if(Zdown==1&&lastZdown==0){
+        for(j=0;j<width;j++)
+          for(k=0;k<height;k++)
+            buffer[k*width+j]=bkg[k*width+j];
+        copyToGraph(buffer);
+        soundStatus[song]=2;
+        lasttime+=500;
+        state=1;
+        isauto=0;
+        loadpins();
+        begin=0;
+        gametime=0;
+        score=0;
+        diescore=0;
+        count=0;
+        combo=0;
+        showcombo=0;
+        thecombo=0;
+      }
+      if(Xdown==1&&lastXdown==0){
+        song--;
+        if(song<0)song=0;
+        for(i=0;i<songs;i++)
+          if(i==song)soundStatus[i]=1;
+          else soundStatus[i]=0;
+      }
+      if(Cdown==1&&lastCdown==0){
+        song++;
+        if(song>=songs)song=songs-1;
+        for(i=0;i<songs;i++)
+          if(i==song)soundStatus[i]=1;
+          else soundStatus[i]=0;
+      }
+      if(Vdown==1&&lastVdown==0){
+        for(j=0;j<width;j++)
+          for(k=0;k<height;k++)
+            buffer[k*width+j]=bkg[k*width+j];
+        copyToGraph(buffer);
+        soundStatus[song]=2;
+        lasttime+=500;
+        state=1;
+        isauto=1;
+        loadpins();
+        begin=0;
+        gametime=0;
+        score=0;
+        diescore=0;
+        count=0;
+        combo=0;
+        showcombo=0;
+        thecombo=0;
+      }
+    }else if(state==1){
+      printf("%d\n",begin);
+      if(soundStatus[song]==2)
+        soundStatus[song]=1;
       gametime+=20;
       stack[0]=0;
       //drawgraph(0,0,width,height,bkg);
@@ -217,18 +317,18 @@ void* taiko(void *arg){
       for(i=begin;i<hitcnt;i++){
         if(pins[i].state==accept){
           pins[i].locationy-=10;
-          pins[i].locationx+=25;
+          pins[i].Locationx+=25;
           pins[i].r2-=200;
           if(pins[i].r2<0)pins[i].state=trulydead;
         }else if(pins[i].state==dead){
           //printf("die\n");
           pins[i].locationy+=10;
-          pins[i].locationx+=20;
+          pins[i].Locationx+=20;
           pins[i].r2-=200;
           if(pins[i].r2<0)pins[i].state=trulydead;
-        }else if(pins[i].locationx<gametime-100||pins[i].locationy<-100||pins[i].locationy>=height+100){
+        }else if(pins[i].Locationx<gametime-100||pins[i].locationy<-100||pins[i].locationy>=height+100){
           pins[i].state=trulydead;
-        }else if(pins[i].locationx<gametime+150){
+        }else if(pins[i].Locationx<gametime+150){
           count=0;
           showcombo=0;
           combo=0;
@@ -239,69 +339,74 @@ void* taiko(void *arg){
           begin=i+1;
           continue;
         }
-        if(pins[i].locationx-gametime>width+100)break;
-        if(pins[i].locationy>-100&&pins[i].locationy<height+100){
-          if(pins[i].state==pending&&pins[i].locationx-gametime>targetx-pins[i].range&&pins[i].locationx-gametime<targetx+pins[i].range){
-            if(pins[i].type==note){
+        if(pins[i].Locationx-gametime>width+100)break;
+        if(pins[i].type==note){
+          if(pins[i].locationy>-100&&pins[i].locationy<height+100){
+            if(pins[i].state==pending&&pins[i].Locationx-gametime>targetx-pins[i].range&&pins[i].Locationx-gametime<targetx+pins[i].range){
               if((Zdown==0&&Vdown==0)||(Xdown==0&&Cdown==0)){
                 int toaccept=0;
                 int todie=0;
-                if(pins[i].zpoint==0){
-                  if(Zdown==0){
-                    pins[i].zpoint=1;
+                if(isauto==0){
+                  if(pins[i].zpoint==0){
+                    if(Zdown==0){
+                      pins[i].zpoint=1;
+                    }
+                  }else if(pins[i].zpoint==1&&Zdown==1){
+                    pins[i].zpoint++;
+                    if(pins[i].color==0){
+                      toaccept++;
+                    }else{
+                      todie++;
+                    }
                   }
-                }else if(pins[i].zpoint==1&&Zdown==1){
-                  pins[i].zpoint++;
-                  if(pins[i].color==0){
-                    toaccept++;
-                  }else{
-                    todie++;
+                  if(pins[i].xpoint==0){
+                    if(Xdown==0){
+                      pins[i].xpoint=1;
+                    }
+                  }else if(pins[i].xpoint==1&&Xdown==1){
+                    pins[i].xpoint++;
+                    if(pins[i].color==1){
+                      toaccept++;
+                    }else{
+                      todie++;
+                    }
                   }
+                  if(pins[i].cpoint==0){
+                    if(Cdown==0){
+                      pins[i].cpoint=1;
+                    }
+                  }else if(pins[i].cpoint==1&&Cdown==1){
+                    pins[i].cpoint++;
+                    if(pins[i].color==1){
+                      toaccept++;
+                    }else{
+                      todie++;
+                    }
+                  }
+                  if(pins[i].vpoint==0){
+                    if(Vdown==0){
+                      pins[i].vpoint=1;
+                    }
+                  }else if(pins[i].vpoint==1&&Vdown==1){
+                    pins[i].vpoint++;
+                    if(pins[i].color==0){
+                      toaccept++;
+                    }else{
+                      todie++;
+                    }
+                  }
+                  if(todie){
+                    pins[i].state=dead;
+                    count=0;
+                    combo=0;
+                    diescore+=100;
+                  }
+                
+                }else{
+                  toaccept=1;
+                  if(pins[i].size==1)toaccept=2;
+                  
                 }
-                if(pins[i].xpoint==0){
-                  if(Xdown==0){
-                    pins[i].xpoint=1;
-                  }
-                }else if(pins[i].xpoint==1&&Xdown==1){
-                  pins[i].xpoint++;
-                  if(pins[i].color==1){
-                    toaccept++;
-                  }else{
-                    todie++;
-                  }
-                }
-                if(pins[i].cpoint==0){
-                  if(Cdown==0){
-                    pins[i].cpoint=1;
-                  }
-                }else if(pins[i].cpoint==1&&Cdown==1){
-                  pins[i].cpoint++;
-                  if(pins[i].color==1){
-                    toaccept++;
-                  }else{
-                    todie++;
-                  }
-                }
-                if(pins[i].vpoint==0){
-                  if(Vdown==0){
-                    pins[i].vpoint=1;
-                  }
-                }else if(pins[i].vpoint==1&&Vdown==1){
-                  pins[i].vpoint++;
-                  if(pins[i].color==0){
-                    toaccept++;
-                  }else{
-                    todie++;
-                  }
-                }
-                if(todie){
-                  pins[i].state=dead;
-                  count=0;
-                  combo=0;
-                  diescore+=100;
-                }
-                /*toaccept=1;
-                if(pins[i].size==1)toaccept=2;*/
                 while(toaccept){
                   toaccept--;
                   showcombo=0;
@@ -325,39 +430,39 @@ void* taiko(void *arg){
             }
           }
           int r=pins[i].size*10+35;
-          drawgraph(pins[i].locationx-gametime-r,pins[i].locationy-r,r*2,r*2,faces[pins[i].size*2+pins[i].color]);
+          drawgraph(pins[i].Locationx-gametime-r,pins[i].locationy-r,r*2,r*2,faces[pins[i].size*2+pins[i].color],1);
         }
       }
       //printf("%d\n",score);
       int toprint=score;
       for(i=0;i<8;i++){
-        drawgraph(745-i*45,10,numberwidth,numberheight,numbers[toprint%10]);
+        drawgraph(745-i*45,10,numberwidth,numberheight,numbers[toprint%10],1);
         toprint/=10;
       }
       toprint=count;
       for(i=0;i<4;i++){
-        drawgraph(90-i*20,285,20,30,numbers[toprint%10+20]);
+        drawgraph(90-i*20,285,20,30,numbers[toprint%10+20],1);
         toprint/=10;
       }
       if(nowtime-showcombo<500){
         thecombo%=100;
         int x=180;
         if(thecombo>=10){
-          drawgraph(x,150,numberwidth,numberheight,numbers[thecombo/10+10]);
+          drawgraph(x,150,numberwidth,numberheight,numbers[thecombo/10+10],1);
           x+=numberwidth;
         }
-        drawgraph(x,150,numberwidth,numberheight,numbers[thecombo%10+10]);
-        drawgraph(30,150,150,60,comboX);
+        drawgraph(x,150,numberwidth,numberheight,numbers[thecombo%10+10],1);
+        drawgraph(30,150,150,60,comboX,1);
       }
       if(score+diescore==0)toprint=100;
       else toprint=score*100/(score+diescore);
       i=0;
       while(toprint){
-        drawgraph(700-i*45,80,numberwidth,numberheight,numbers[toprint%10]);
+        drawgraph(700-i*45,80,numberwidth,numberheight,numbers[toprint%10],1);
         toprint/=10;
         i++;
       }
-      drawgraph(745,80,numberwidth,numberheight,numbers[30]);
+      drawgraph(745,80,numberwidth,numberheight,numbers[30],1);
       copyToGraph(buffer);
       for(i=1;i<=stack[0];i++)
         buffer[stack[i]]=bkg[stack[i]];
@@ -366,5 +471,6 @@ void* taiko(void *arg){
     lastXdown=Xdown;
     lastCdown=Cdown;
     lastVdown=Vdown;
+    lastQdown=Qdown;
   }
 }
