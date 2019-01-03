@@ -10,10 +10,14 @@
 
 int sound(int id);
 
-int initSoundPlayer();
+int initSoundPlayer(void (*callbackFunc)(int));
 
 int closeSoundPlayer();
 
+void endPlay(int channel);
+
 void stopAll();
+
+void stop(int id);
 
 #endif // SOUND_H_

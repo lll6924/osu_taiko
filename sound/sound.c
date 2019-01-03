@@ -1,5 +1,6 @@
 #include "sound.h"
 #define NUM_WAVEFORMS 5
+#define BGM_NUM 2
 const char* _waveFileNames[NUM_WAVEFORMS] =
 {
     "1.wav",
@@ -10,6 +11,8 @@ const char* _waveFileNames[NUM_WAVEFORMS] =
 };
 
 Mix_Chunk* _sample[NUM_WAVEFORMS];
+
+void (*endPlayCallback)(int);
 
 int Init()
 {
@@ -30,6 +33,15 @@ int Init()
         return 0;
     }
 
+    result = Mix_ReserveChannels(BGM_NUM);
+    if ( result < 0 )
+    {
+        fprintf(stderr, "Unable to reserve mixing channels: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    Mix_ChannelFinished(endPlay);
+
     // Load waveforms
     int i;
     for(i = 0; i < NUM_WAVEFORMS; i++ )
@@ -44,9 +56,15 @@ int Init()
     return 1;
 }
 
-int initSoundPlayer() {
+void endPlay(int channel) {
+    //printf("endplay %d\n", channel);
+    if (channel < BGM_NUM) (*endPlayCallback)(channel);
+}
+
+int initSoundPlayer(void (*callbackFunc)(int)) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO );
     atexit(SDL_Quit);
+    endPlayCallback = callbackFunc;
     if (Init() == 0)
         return -1;
     else return 0;
@@ -65,10 +83,16 @@ int closeSoundPlayer() {
 
 int sound(int id) {
     if (id >= 0 && id < NUM_WAVEFORMS) {
-        Mix_PlayChannel(-1, _sample[id], 0);
+        if (id < BGM_NUM) Mix_PlayChannel(id, _sample[id], 0);
+        else
+            Mix_PlayChannel(-1, _sample[id], 0);
     }
 }
 
 void stopAll() {
     Mix_HaltChannel(-1);
+}
+
+void stop(int id) {
+    Mix_HaltChannel(id);
 }
