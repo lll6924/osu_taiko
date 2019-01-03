@@ -37,13 +37,8 @@ struct pin{
   enum STATE state;
 };
 
-
 struct beatMap{
     int offset;
     int len;
 };
-
-int convert(char * filename, char *outFilename, struct pin* data);
-
-unsigned char* generate_bin(char **names, int filenum);
 #endif

@@ -1,0 +1,2 @@
+memManager.exe: memManager.c converter.c memManager.h
+	g++ -o memManager.exe memManager.c converter.c

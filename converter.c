@@ -1,14 +1,11 @@
-#include "taiko.h"
-#include<string.h>
-#include<stdio.h>
+#include "memManager.h"
 #include<math.h>
-
 
 void print(struct pin p) {
     printf("Loc %d range %d type %d size %d color %d\n", p.locationx, p.range, p.type, p.size, p.color);
 }
 
-int printTo(char* data, int len, char* outFilename) {
+int printTo(unsigned char* data, int len, char* outFilename) {
     if (outFilename == NULL) outFilename = "mem.bin";
     FILE * of = fopen(outFilename, "wb");
     if (fwrite(data, sizeof(char), len, of) < 0) printf("write error!\n");
@@ -42,9 +39,9 @@ int convert(char * filename, char *outFilename, struct pin* data) {
             sscanf(s, "%d,%d,%d,%d,%d", &x, &y, &time, &type, &hitsound);
             data[cnt].locationx = round(time / 10.0);
 
-            if (type & 8) data[cnt].type = denden;
-            if (type & 2) data[cnt].type = drumroll;
-            if (type & 1) data[cnt].type = note;
+            if (type & 8) data[cnt].type = pin::denden;
+            if (type & 2) data[cnt].type = pin::drumroll;
+            if (type & 1) data[cnt].type = pin::note;
 
             if (type & 4) data[cnt].combo = 1;
 
@@ -64,13 +61,12 @@ int convert(char * filename, char *outFilename, struct pin* data) {
     return cnt;
 }
 
-unsigned char* generate_bin(char **names, int filenum) {
+int generate_text_bin(char **names, int filenum, unsigned char* mem) {
     int pos = 0, offset = 0;
     int i, cnt = 0;
-    unsigned char* mem, ptr;
+    unsigned char* ptr;
     struct beatMap* maps;
     struct pin* datas;
-    mem = (unsigned char *) malloc(1024 * 1024);
     ptr = mem;
     maps = (struct beatMap*) mem;
     offset = sizeof(struct beatMap) * MAX_MAPS;
@@ -85,10 +81,10 @@ unsigned char* generate_bin(char **names, int filenum) {
         offset += maps[i].len *sizeof(struct pin);
         datas = &(datas[maps[i].len]);
     }
-    printf("Total length: %d\n", offset);
-    printTo(mem, offset, NULL);
+    printf("Total text length: %d\n\n", offset);
+    //printTo(mem, offset, NULL);
 
-    return mem;
+    return offset;
 }
 
 

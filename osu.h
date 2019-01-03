@@ -3,6 +3,7 @@
 
 #include <gtk/gtk.h>
 #include "taiko.h"
+#include "memManager.h"
 
 
 static const int MASKS[8]={1,2,4,8,16,32,64,128};
