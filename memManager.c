@@ -15,7 +15,7 @@ int generate_pic_bin(char **bin_filenames, int filenum, unsigned char *headAddr)
     int i = 0, offset, len;
 
     int *header = (int *) headAddr;
-    offset = filenum * sizeof(char *);
+    offset = filenum * sizeof(int);
 
     printf("%d\n", offset);
 
