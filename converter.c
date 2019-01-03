@@ -46,6 +46,8 @@ int convert(char * filename, char *outFilename, struct pin* data) {
             if (type & 2) data[cnt].type = drumroll;
             if (type & 1) data[cnt].type = note;
 
+            if (type & 4) data[cnt].combo = 1;
+
             data[cnt].size = (hitsound & 4) ? 1 : 0;
             data[cnt].color = (hitsound & 8) ? 0 : 1;
 
