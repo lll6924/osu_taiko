@@ -1,4 +1,4 @@
-//#include "osu.h"
+#include "osu.h"
 #include "memManager.h"
 
 char *mem;

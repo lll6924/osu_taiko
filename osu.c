@@ -10,23 +10,25 @@ unsigned char* bkg;
 
 unsigned char* combo;
 
-unsigned char* getCombo(){
+unsigned char** numbers;
+
+unsigned char** faces;
+
+unsigned char *mapmem;
+
+unsigned char* instructions;
+
+/*unsigned char* getCombo(){
   return combo;
 }
-
-unsigned char** numbers;
 
 unsigned char** getNumbers(){
   return numbers;
 }
 
-unsigned char** faces;
-
 unsigned char** getFaces(){
   return faces;
 }
-
-unsigned char *mapmem;
 
 unsigned char* getMapMem(){
   return (unsigned char*)mapmem;
@@ -36,11 +38,9 @@ unsigned char* getbkg(){
   return bkg;
 }
 
-unsigned char* instructions;
-
 unsigned char* getInstructions(){
   return instructions;
-}
+}*/
 
 unsigned int getTime()
 {
@@ -261,9 +261,9 @@ activate (GtkApplication *app,
   gtk_widget_set_size_request (drawing_area, width,height);
 
   gtk_container_add (GTK_CONTAINER (frame), drawing_area);
-  
+
   guint timer = g_timeout_add(30, (GSourceFunc)deal_time, NULL);
-  
+
   /* Signals used to handle the backing surface */
   g_signal_connect (drawing_area, "draw",
                     G_CALLBACK (draw_cb), NULL);
@@ -272,7 +272,7 @@ activate (GtkApplication *app,
 
   g_signal_connect(window, "key-press-event",
           G_CALLBACK(deal_key_press), NULL);
-  
+
   g_signal_connect(window, "key-release-event",
           G_CALLBACK(deal_key_release), NULL);
 
@@ -288,7 +288,7 @@ int main (int argc,char **argv){
   filenames[0] = "fripSide - snow blind -after- (chaica) [Taiko Oni].osu";
   filenames[1] = "LiSA - crossing field (gaston_2199) [Kantan].osu";
   mapmem = generate_bin(filenames, 2);
-  
+
   /*taikomap = (struct pin*) malloc(sizeof(struct pin) * MAX_HITS);
   hitcnt = convert("fripSide - snow blind -after- (chaica) [Taiko Oni].osu", NULL, taikomap);*/
   bkg=(unsigned char*)malloc(width*height*sizeof(char));
@@ -333,7 +333,7 @@ int main (int argc,char **argv){
   fp=fopen("bins/score-percent.bin","rb");
   fread(numbers[30],1,numberwidth*numberheight*sizeof(char),fp);
   fclose(fp);
-  
+
   faces=(unsigned char**)malloc(4*sizeof(char*));
   for(i=0;i<2;i++){
     faces[i]=(unsigned char*)malloc(70*70*sizeof(char));
