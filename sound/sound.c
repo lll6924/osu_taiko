@@ -81,11 +81,11 @@ int closeSoundPlayer() {
     SDL_Quit();
 }
 
-int sound(int id) {
+int sound(int id, int times) {
     if (id >= 0 && id < NUM_WAVEFORMS) {
-        if (id < BGM_NUM) Mix_PlayChannel(id, _sample[id], 0);
+        if (id < BGM_NUM) Mix_PlayChannel(id, _sample[id], times);
         else
-            Mix_PlayChannel(-1, _sample[id], 0);
+            Mix_PlayChannel(-1, _sample[id], times);
     }
 }
 

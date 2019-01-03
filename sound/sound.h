@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int sound(int id);
+int sound(int id, int times);
 
 int initSoundPlayer(void (*callbackFunc)(int));
 
