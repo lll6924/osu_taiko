@@ -1,10 +1,13 @@
 #include "sound.h"
-#define NUM_WAVEFORMS 5
-#define BGM_NUM 2
+#define NUM_WAVEFORMS 8
+#define BGM_NUM 5
 const char* _waveFileNames[NUM_WAVEFORMS] =
 {
     "1.wav",
     "2.wav",
+    "../songs/2.wav",
+    "../songs/5.wav",
+    "../songs/6.wav",
     "hit.wav",
     "hit2.wav",
     "combo.wav"

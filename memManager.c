@@ -47,6 +47,9 @@ unsigned char* generate_mem_bin() {
     char ** osu_filenames = (char **) malloc(sizeof(char *) * MAX_MAPS);
     osu_filenames[0] = "test0.osu";
     osu_filenames[1] = "test1.osu";
+    osu_filenames[2] = "songs/2.osu";
+    osu_filenames[3] = "songs/5.osu";
+    osu_filenames[4] = "songs/6.osu";
 
     char ** pic_filenames = (char **) malloc(sizeof(char *) * PIC_NUM);
 
@@ -100,7 +103,7 @@ unsigned char* generate_mem_bin() {
     data = (unsigned char *) malloc(mem_size);
     memset(data, 0, mem_size);
     textHeader = data;
-    int offset = generate_text_bin(osu_filenames, 2, textHeader);
+    int offset = generate_text_bin(osu_filenames, 5, textHeader);
     int len = offset;
     picHeader = &(data[offset]);
 
